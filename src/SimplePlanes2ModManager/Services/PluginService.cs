@@ -18,11 +18,13 @@ namespace SimplePlanes2ModManager.Services
         };
 
         private readonly GameDirectoryService _gameDirectoryService;
+        private readonly PluginInstallRecordService _recordService;
         private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
 
-        public PluginService(GameDirectoryService gameDirectoryService)
+        public PluginService(GameDirectoryService gameDirectoryService, PluginInstallRecordService recordService)
         {
             _gameDirectoryService = gameDirectoryService;
+            _recordService = recordService;
         }
 
         public PluginInfo[] ListInstalledPlugins()
@@ -49,12 +51,12 @@ namespace SimplePlanes2ModManager.Services
             return plugins.ToArray();
         }
 
-        public void InstallPluginZip(string zipPath)
+        public PluginManifest InstallPluginZip(string zipPath)
         {
-            InstallPluginZip(zipPath, null);
+            return InstallPluginZip(zipPath, null);
         }
 
-        public void InstallPluginZip(string zipPath, PluginIndex expectedPluginIndex)
+        public PluginManifest InstallPluginZip(string zipPath, PluginIndex expectedPluginIndex)
         {
             if (string.IsNullOrEmpty(zipPath) || !File.Exists(zipPath))
             {
@@ -71,6 +73,7 @@ namespace SimplePlanes2ModManager.Services
             }
 
             ZipInstallService.ExtractZipToDirectorySafely(zipPath, gameDirectory, PackageMetadataFiles);
+            return manifest;
         }
 
         public void EnablePlugin(string pluginId)
@@ -385,14 +388,28 @@ namespace SimplePlanes2ModManager.Services
             }
 
             string directoryName = Path.GetFileName(pluginDirectory);
+            PluginInstallRecord record = _recordService.FindRecordForPluginDirectory(directoryName);
+            string installedVersion = record != null && !string.IsNullOrEmpty(record.installedVersion)
+                ? record.installedVersion
+                : GetFileVersion(entryFile);
+
             return new PluginInfo
             {
                 id = directoryName,
-                name = directoryName,
+                name = record != null && !string.IsNullOrEmpty(record.name) ? record.name : directoryName,
                 directoryName = directoryName,
                 directoryPath = pluginDirectory,
                 entryFile = Path.GetFileName(entryFile),
-                version = GetFileVersion(entryFile),
+                version = installedVersion,
+                installedVersion = installedVersion,
+                latestVersion = record != null ? record.latestVersion : string.Empty,
+                indexUrl = record != null ? record.indexUrl : string.Empty,
+                repository = record != null ? record.repository : string.Empty,
+                updateMessage = record != null ? record.updateMessage : string.Empty,
+                hasInstallRecord = record != null,
+                canCheckUpdates = record != null && !string.IsNullOrEmpty(record.indexUrl),
+                updateAvailable = record != null && record.updateAvailable,
+                updateCheckFailed = record != null && record.updateCheckFailed,
                 isEnabled = enabledDlls.Length > 0
             };
         }

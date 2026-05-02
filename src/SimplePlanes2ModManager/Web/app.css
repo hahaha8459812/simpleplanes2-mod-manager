@@ -304,6 +304,8 @@ p {
   margin-top: 8px;
   color: #a9c3de;
   font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .plugin-actions {

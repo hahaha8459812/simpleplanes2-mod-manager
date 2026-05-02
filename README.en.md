@@ -14,6 +14,7 @@ The current version is a first-stage runnable prototype focused on local reliabi
 - Scan installed plugins under `BepInEx\plugins`.
 - Install plugins from local plugin zips.
 - Install plugins from a GitHub repository or remote `index.json`.
+- Manually check Git-installed plugins for newer versions.
 - Enable / disable plugin DLLs.
 - Uninstall plugin directories while keeping user config by default.
 - Open the game, plugins, and config directories.
@@ -160,6 +161,12 @@ Read index.json
 ```
 
 The current version supports GitHub repository URLs and direct `index.json` URLs only. A plugin source list and automatic updates can be added later.
+
+## Update Checks
+
+When a plugin is installed from Git, the manager records its `index.json` URL and installed version. `Check Updates` on the plugins page requests those `index.json` files again, compares local and remote versions, and shows the update state on each plugin card.
+
+Update checks are manual and do not access the network on startup. Only Git-installed plugins with a recorded source can be checked; plugins installed from local zips are shown as having no update source.
 
 ## Design
 

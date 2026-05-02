@@ -25,6 +25,7 @@
       openConfig: "\u6253\u5f00\u914d\u7f6e\u76ee\u5f55",
       installPluginZip: "\u5b89\u88c5\u63d2\u4ef6\u538b\u7f29\u5305",
       installFromGit: "\u4ece Git \u5b89\u88c5",
+      checkUpdates: "\u68c0\u67e5\u66f4\u65b0",
       gitUrlPlaceholder: "GitHub \u4ed3\u5e93\u5730\u5740\u6216 index.json \u5730\u5740",
       openPluginsFolder: "\u6253\u5f00\u63d2\u4ef6\u76ee\u5f55",
       folders: "\u76ee\u5f55",
@@ -46,6 +47,12 @@
       version: "\u7248\u672c",
       enable: "\u542f\u7528",
       disable: "\u7981\u7528",
+      update: "\u66f4\u65b0",
+      latest: "\u6700\u65b0",
+      source: "\u6765\u6e90",
+      updateAvailable: "\u6709\u65b0\u7248\u672c",
+      updateCheckFailed: "\u68c0\u67e5\u5931\u8d25",
+      noUpdateSource: "\u65e0\u66f4\u65b0\u6765\u6e90",
       uninstall: "\u5378\u8f7d",
       done: "\u5b8c\u6210\u3002",
       bridgeUnavailable: "\u6865\u63a5\u65b9\u6cd5\u4e0d\u53ef\u7528\uff1a",
@@ -74,6 +81,7 @@
       openConfig: "Open Config",
       installPluginZip: "Install Plugin Zip",
       installFromGit: "Install from Git",
+      checkUpdates: "Check Updates",
       gitUrlPlaceholder: "GitHub repository URL or index.json URL",
       openPluginsFolder: "Open Plugins Folder",
       folders: "Folders",
@@ -95,6 +103,12 @@
       version: "Version",
       enable: "Enable",
       disable: "Disable",
+      update: "Update",
+      latest: "Latest",
+      source: "Source",
+      updateAvailable: "Update Available",
+      updateCheckFailed: "Check Failed",
+      noUpdateSource: "No Update Source",
       uninstall: "Uninstall",
       done: "Done.",
       bridgeUnavailable: "Bridge method is unavailable: ",
@@ -127,6 +141,7 @@
     setText("openConfigButton", text("openConfig"));
     setText("pluginsTitle", text("plugins"));
     setText("installFromGitButton", text("installFromGit"));
+    setText("checkUpdatesButton", text("checkUpdates"));
     setInputPlaceholder("gitInstallUrlInput", text("gitUrlPlaceholder"));
     setText("installPluginButton", text("installPluginZip"));
     setText("openPluginsButton", text("openPluginsFolder"));
@@ -160,6 +175,10 @@
         raw = window.external.SelectAndInstallPluginZip();
       } else if (method === "InstallPluginFromGit") {
         raw = window.external.InstallPluginFromGit(argument);
+      } else if (method === "CheckPluginUpdates") {
+        raw = window.external.CheckPluginUpdates();
+      } else if (method === "UpdatePlugin") {
+        raw = window.external.UpdatePlugin(argument);
       } else if (method === "InstallBundledBepInEx") {
         raw = window.external.InstallBundledBepInEx();
       } else if (method === "SelectAndInstallBepInExZip") {
@@ -288,24 +307,67 @@
       var toggleText = plugin.isEnabled ? text("disable") : text("enable");
       actions =
         '<div class="plugin-actions">' +
+        renderUpdateButton(plugin) +
         '<button type="button" class="button secondary plugin-action" data-method="' + toggleMethod + '" data-plugin-id="' + escapeAttribute(plugin.id) + '">' + toggleText + '</button>' +
         '<button type="button" class="button danger plugin-action" data-method="UninstallPlugin" data-plugin-id="' + escapeAttribute(plugin.id) + '">' + text("uninstall") + '</button>' +
         '</div>';
     }
 
+    var updateBadge = renderUpdateBadge(plugin);
+    var updateDetails = renderUpdateDetails(plugin);
     return (
       '<div class="plugin-card">' +
       '<div class="plugin-title">' +
       '<span>' + escapeHtml(plugin.name || plugin.id) + '</span>' +
-      '<span class="badge ' + statusClass + '">' + statusText + '</span>' +
+      '<span>' + updateBadge + '<span class="badge ' + statusClass + '">' + statusText + '</span></span>' +
       '</div>' +
       '<div class="plugin-meta">' +
       escapeHtml(plugin.entryFile || "--") + '<br>' +
-      text("version") + ': ' + escapeHtml(plugin.version || "--") +
+      text("version") + ': ' + escapeHtml(plugin.installedVersion || plugin.version || "--") +
+      updateDetails +
       '</div>' +
       actions +
       '</div>'
     );
+  }
+
+  function renderUpdateButton(plugin) {
+    if (!plugin.updateAvailable) {
+      return "";
+    }
+
+    return '<button type="button" class="button primary plugin-action" data-method="UpdatePlugin" data-plugin-id="' + escapeAttribute(plugin.id) + '">' + text("update") + '</button>';
+  }
+
+  function renderUpdateBadge(plugin) {
+    if (plugin.updateAvailable) {
+      return '<span class="badge warn">' + text("updateAvailable") + '</span> ';
+    }
+
+    if (plugin.updateCheckFailed) {
+      return '<span class="badge bad">' + text("updateCheckFailed") + '</span> ';
+    }
+
+    return "";
+  }
+
+  function renderUpdateDetails(plugin) {
+    var html = "";
+    if (plugin.latestVersion) {
+      html += '<br>' + text("latest") + ': ' + escapeHtml(plugin.latestVersion);
+    }
+
+    if (plugin.repository || plugin.indexUrl) {
+      html += '<br>' + text("source") + ': ' + escapeHtml(plugin.repository || plugin.indexUrl);
+    } else if (!plugin.canCheckUpdates) {
+      html += '<br>' + text("source") + ': ' + text("noUpdateSource");
+    }
+
+    if (plugin.updateMessage) {
+      html += '<br>' + escapeHtml(plugin.updateMessage);
+    }
+
+    return html;
   }
 
   function bindPluginActions(container) {
@@ -438,6 +500,7 @@
       var input = document.getElementById("gitInstallUrlInput");
       runAndRefresh("InstallPluginFromGit", input ? input.value : "");
     });
+    bindClick("checkUpdatesButton", function () { runAndRefresh("CheckPluginUpdates"); });
     bindClick("installPluginButton", function () { runAndRefresh("SelectAndInstallPluginZip"); });
     bindClick("installBundledBepInExButton", function () { runAndRefresh("InstallBundledBepInEx"); });
     bindClick("installBepInExButton", function () { runAndRefresh("SelectAndInstallBepInExZip"); });

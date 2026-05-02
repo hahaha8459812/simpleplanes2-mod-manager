@@ -10,11 +10,13 @@ namespace SimplePlanes2ModManager.Services
     internal sealed class RemotePluginService
     {
         private readonly PluginService _pluginService;
+        private readonly PluginInstallRecordService _recordService;
         private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
 
-        public RemotePluginService(PluginService pluginService)
+        public RemotePluginService(PluginService pluginService, PluginInstallRecordService recordService)
         {
             _pluginService = pluginService;
+            _recordService = recordService;
         }
 
         public void InstallFromGit(string repositoryOrIndexUrl)
@@ -24,13 +26,15 @@ namespace SimplePlanes2ModManager.Services
                 throw new InvalidOperationException("Repository URL is empty.");
             }
 
-            PluginIndex pluginIndex = ReadPluginIndex(repositoryOrIndexUrl.Trim());
+            string resolvedIndexUrl;
+            PluginIndex pluginIndex = ReadPluginIndex(repositoryOrIndexUrl.Trim(), out resolvedIndexUrl);
             ValidatePluginIndex(pluginIndex);
 
             string packagePath = DownloadPackage(pluginIndex);
             try
             {
-                _pluginService.InstallPluginZip(packagePath, pluginIndex);
+                PluginManifest manifest = _pluginService.InstallPluginZip(packagePath, pluginIndex);
+                _recordService.SaveRecord(CreateInstallRecord(pluginIndex, manifest, resolvedIndexUrl));
             }
             finally
             {
@@ -38,9 +42,69 @@ namespace SimplePlanes2ModManager.Services
             }
         }
 
-        private PluginIndex ReadPluginIndex(string repositoryOrIndexUrl)
+        public void CheckForUpdates()
         {
-            string indexJson = DownloadIndexJson(repositoryOrIndexUrl);
+            PluginInstallRecord[] records = _recordService.LoadRecords();
+            for (int index = 0; index < records.Length; index++)
+            {
+                PluginInstallRecord record = records[index];
+                if (record == null || string.IsNullOrEmpty(record.indexUrl))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    string resolvedIndexUrl;
+                    PluginIndex pluginIndex = ReadPluginIndex(record.indexUrl, out resolvedIndexUrl);
+                    ValidatePluginIndex(pluginIndex);
+                    ValidatePluginIndexMatchesRecord(pluginIndex, record);
+                    record.latestVersion = pluginIndex.version;
+                    record.updateAvailable = IsRemoteVersionNewer(record.installedVersion, pluginIndex.version);
+                    record.updateCheckFailed = false;
+                    record.updateMessage = record.updateAvailable
+                        ? "Update available: " + record.installedVersion + " -> " + pluginIndex.version
+                        : "Already up to date.";
+                }
+                catch (Exception exception)
+                {
+                    record.updateAvailable = false;
+                    record.updateCheckFailed = true;
+                    record.updateMessage = exception.Message;
+                }
+            }
+
+            _recordService.SaveRecords(records);
+        }
+
+        public void UpdatePlugin(string pluginId)
+        {
+            PluginInstallRecord record = FindRecordById(pluginId);
+            if (record == null || string.IsNullOrEmpty(record.indexUrl))
+            {
+                throw new InvalidOperationException("Plugin has no recorded update source.");
+            }
+
+            string resolvedIndexUrl;
+            PluginIndex pluginIndex = ReadPluginIndex(record.indexUrl, out resolvedIndexUrl);
+            ValidatePluginIndex(pluginIndex);
+            ValidatePluginIndexMatchesRecord(pluginIndex, record);
+
+            string packagePath = DownloadPackage(pluginIndex);
+            try
+            {
+                PluginManifest manifest = _pluginService.InstallPluginZip(packagePath, pluginIndex);
+                _recordService.SaveRecord(CreateInstallRecord(pluginIndex, manifest, resolvedIndexUrl));
+            }
+            finally
+            {
+                TryDeleteFile(packagePath);
+            }
+        }
+
+        private PluginIndex ReadPluginIndex(string repositoryOrIndexUrl, out string resolvedIndexUrl)
+        {
+            string indexJson = DownloadIndexJson(repositoryOrIndexUrl, out resolvedIndexUrl);
             PluginIndex pluginIndex = _serializer.Deserialize<PluginIndex>(indexJson);
             if (pluginIndex == null)
             {
@@ -50,10 +114,11 @@ namespace SimplePlanes2ModManager.Services
             return pluginIndex;
         }
 
-        private string DownloadIndexJson(string repositoryOrIndexUrl)
+        private string DownloadIndexJson(string repositoryOrIndexUrl, out string resolvedIndexUrl)
         {
             if (repositoryOrIndexUrl.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
+                resolvedIndexUrl = repositoryOrIndexUrl;
                 return DownloadText(repositoryOrIndexUrl);
             }
 
@@ -66,10 +131,12 @@ namespace SimplePlanes2ModManager.Services
 
             try
             {
+                resolvedIndexUrl = rawMainUrl;
                 return DownloadText(rawMainUrl);
             }
             catch
             {
+                resolvedIndexUrl = rawMasterUrl;
                 return DownloadText(rawMasterUrl);
             }
         }
@@ -170,6 +237,137 @@ namespace SimplePlanes2ModManager.Services
             }
 
             return packagePath;
+        }
+
+        private PluginInstallRecord FindRecordById(string pluginId)
+        {
+            PluginInstallRecord[] records = _recordService.LoadRecords();
+            for (int index = 0; index < records.Length; index++)
+            {
+                PluginInstallRecord record = records[index];
+                if (record == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(record.id, pluginId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(Path.GetFileName((record.pluginDirectory ?? string.Empty).Replace('\\', '/').TrimEnd('/')), pluginId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return record;
+                }
+            }
+
+            return null;
+        }
+
+        private static PluginInstallRecord CreateInstallRecord(PluginIndex pluginIndex, PluginManifest manifest, string resolvedIndexUrl)
+        {
+            return new PluginInstallRecord
+            {
+                id = manifest.id,
+                name = manifest.name,
+                installedVersion = manifest.version,
+                latestVersion = pluginIndex.version,
+                indexUrl = resolvedIndexUrl,
+                repository = string.IsNullOrEmpty(pluginIndex.repository) ? string.Empty : pluginIndex.repository,
+                entryDll = manifest.entryDll,
+                pluginDirectory = GetPluginDirectory(manifest),
+                updateAvailable = false,
+                updateCheckFailed = false,
+                updateMessage = "Installed."
+            };
+        }
+
+        private static string GetPluginDirectory(PluginManifest manifest)
+        {
+            if (!string.IsNullOrEmpty(manifest.pluginDirectory))
+            {
+                return manifest.pluginDirectory;
+            }
+
+            string normalizedEntryDll = (manifest.entryDll ?? string.Empty).Replace('\\', '/');
+            int separatorIndex = normalizedEntryDll.LastIndexOf('/');
+            return separatorIndex > 0 ? normalizedEntryDll.Substring(0, separatorIndex) : string.Empty;
+        }
+
+        private static void ValidatePluginIndexMatchesRecord(PluginIndex pluginIndex, PluginInstallRecord record)
+        {
+            if (!string.Equals(pluginIndex.id, record.id, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("index.json id does not match the installed plugin record.");
+            }
+        }
+
+        private static bool IsRemoteVersionNewer(string installedVersion, string remoteVersion)
+        {
+            int comparisonResult;
+            if (!TryCompareVersions(installedVersion, remoteVersion, out comparisonResult))
+            {
+                return !string.Equals(installedVersion, remoteVersion, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return comparisonResult < 0;
+        }
+
+        private static bool TryCompareVersions(string leftVersion, string rightVersion, out int comparisonResult)
+        {
+            comparisonResult = 0;
+            int[] leftParts;
+            int[] rightParts;
+            if (!TryParseVersion(leftVersion, out leftParts) || !TryParseVersion(rightVersion, out rightParts))
+            {
+                return false;
+            }
+
+            int partCount = Math.Max(leftParts.Length, rightParts.Length);
+            for (int index = 0; index < partCount; index++)
+            {
+                int leftPart = index < leftParts.Length ? leftParts[index] : 0;
+                int rightPart = index < rightParts.Length ? rightParts[index] : 0;
+                if (leftPart == rightPart)
+                {
+                    continue;
+                }
+
+                comparisonResult = leftPart < rightPart ? -1 : 1;
+                return true;
+            }
+
+            comparisonResult = 0;
+            return true;
+        }
+
+        private static bool TryParseVersion(string version, out int[] parts)
+        {
+            parts = new int[0];
+            if (string.IsNullOrEmpty(version))
+            {
+                return false;
+            }
+
+            string normalizedVersion = version.Trim();
+            if (normalizedVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedVersion = normalizedVersion.Substring(1);
+            }
+
+            string[] textParts = normalizedVersion.Split('.');
+            if (textParts.Length == 0)
+            {
+                return false;
+            }
+
+            int[] parsedParts = new int[textParts.Length];
+            for (int index = 0; index < textParts.Length; index++)
+            {
+                if (!int.TryParse(textParts[index], out parsedParts[index]))
+                {
+                    return false;
+                }
+            }
+
+            parts = parsedParts;
+            return true;
         }
 
         private static WebClient CreateWebClient()

@@ -113,6 +113,32 @@ namespace SimplePlanes2ModManager.Bridge
             }
         }
 
+        public string CheckPluginUpdates()
+        {
+            try
+            {
+                _remotePluginService.CheckForUpdates();
+                return GetState();
+            }
+            catch (Exception exception)
+            {
+                return ToJson(BridgeResponse.Failure(exception.Message));
+            }
+        }
+
+        public string UpdatePlugin(string pluginId)
+        {
+            try
+            {
+                _remotePluginService.UpdatePlugin(pluginId);
+                return GetState();
+            }
+            catch (Exception exception)
+            {
+                return ToJson(BridgeResponse.Failure(exception.Message));
+            }
+        }
+
         public string SelectAndInstallBepInExZip()
         {
             return SelectZipAndInstall("Select BepInEx 5 Mono x64 zip", delegate(string zipPath)

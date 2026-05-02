@@ -14,6 +14,7 @@
 - 扫描 `BepInEx\plugins` 下已安装插件。
 - 从本地插件 zip 安装插件。
 - 从 GitHub 仓库或远程 `index.json` 安装插件。
+- 手动检查通过 Git 安装的插件是否有新版本。
 - 启用 / 禁用插件 DLL。
 - 卸载插件目录，默认保留用户配置。
 - 打开游戏目录、插件目录和配置目录。
@@ -160,6 +161,12 @@ https://raw.githubusercontent.com/hahaha8459812/simpleplanes2-minimap-plugin/mai
 ```
 
 当前版本只支持 GitHub 仓库 URL 和直接 `index.json` URL。后续可以扩展为插件源列表和自动更新。
+
+## 检查更新
+
+通过 Git 安装插件时，管理器会记录插件的 `index.json` 地址和本地安装版本。插件页的 `Check Updates` 会重新请求这些 `index.json`，比较本地版本与远程版本，并在插件卡片上显示更新状态。
+
+当前更新检测是手动触发，不会在启动时自动访问网络。只有通过 Git 安装并记录了来源的插件才能检查更新；本地 zip 安装的插件会显示没有更新来源。
 
 ## 设计说明
 
