@@ -126,6 +126,19 @@ namespace SimplePlanes2ModManager.Bridge
             }
         }
 
+        public string RegisterPluginSource(string repositoryOrIndexUrl)
+        {
+            try
+            {
+                _remotePluginService.RegisterInstalledPluginSource(repositoryOrIndexUrl);
+                return GetState();
+            }
+            catch (Exception exception)
+            {
+                return ToJson(BridgeResponse.Failure(exception.Message));
+            }
+        }
+
         public string UpdatePlugin(string pluginId)
         {
             try

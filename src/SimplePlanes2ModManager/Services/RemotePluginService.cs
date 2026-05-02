@@ -77,6 +77,27 @@ namespace SimplePlanes2ModManager.Services
             _recordService.SaveRecords(records);
         }
 
+        public void RegisterInstalledPluginSource(string repositoryOrIndexUrl)
+        {
+            if (string.IsNullOrEmpty(repositoryOrIndexUrl))
+            {
+                throw new InvalidOperationException("Repository URL is empty.");
+            }
+
+            string resolvedIndexUrl;
+            PluginIndex pluginIndex = ReadPluginIndex(repositoryOrIndexUrl.Trim(), out resolvedIndexUrl);
+            ValidatePluginIndex(pluginIndex);
+
+            string pluginDirectory;
+            string installedVersion;
+            if (!_pluginService.TryGetInstalledPluginVersion(pluginIndex.entryDll, out pluginDirectory, out installedVersion))
+            {
+                throw new InvalidOperationException("The plugin from this index.json is not installed.");
+            }
+
+            _recordService.SaveRecord(CreateInstallRecordFromInstalledPlugin(pluginIndex, resolvedIndexUrl, installedVersion));
+        }
+
         public void UpdatePlugin(string pluginId)
         {
             PluginInstallRecord record = FindRecordById(pluginId);
@@ -278,6 +299,27 @@ namespace SimplePlanes2ModManager.Services
             };
         }
 
+        private static PluginInstallRecord CreateInstallRecordFromInstalledPlugin(PluginIndex pluginIndex, string resolvedIndexUrl, string installedVersion)
+        {
+            bool updateAvailable = IsRemoteVersionNewer(installedVersion, pluginIndex.version);
+            return new PluginInstallRecord
+            {
+                id = pluginIndex.id,
+                name = pluginIndex.name,
+                installedVersion = installedVersion,
+                latestVersion = pluginIndex.version,
+                indexUrl = resolvedIndexUrl,
+                repository = string.IsNullOrEmpty(pluginIndex.repository) ? string.Empty : pluginIndex.repository,
+                entryDll = pluginIndex.entryDll,
+                pluginDirectory = GetPluginDirectory(pluginIndex.entryDll),
+                updateAvailable = updateAvailable,
+                updateCheckFailed = false,
+                updateMessage = updateAvailable
+                    ? "Update available: " + installedVersion + " -> " + pluginIndex.version
+                    : "Already up to date."
+            };
+        }
+
         private static string GetPluginDirectory(PluginManifest manifest)
         {
             if (!string.IsNullOrEmpty(manifest.pluginDirectory))
@@ -285,7 +327,12 @@ namespace SimplePlanes2ModManager.Services
                 return manifest.pluginDirectory;
             }
 
-            string normalizedEntryDll = (manifest.entryDll ?? string.Empty).Replace('\\', '/');
+            return GetPluginDirectory(manifest.entryDll);
+        }
+
+        private static string GetPluginDirectory(string entryDll)
+        {
+            string normalizedEntryDll = (entryDll ?? string.Empty).Replace('\\', '/');
             int separatorIndex = normalizedEntryDll.LastIndexOf('/');
             return separatorIndex > 0 ? normalizedEntryDll.Substring(0, separatorIndex) : string.Empty;
         }

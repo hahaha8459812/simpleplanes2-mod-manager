@@ -120,6 +120,49 @@ namespace SimplePlanes2ModManager.Services
             Directory.Delete(pluginDirectory, true);
         }
 
+        public bool TryGetInstalledPluginVersion(string packageEntryDll, out string pluginDirectory, out string installedVersion)
+        {
+            pluginDirectory = string.Empty;
+            installedVersion = string.Empty;
+
+            string pluginDirectoryName = GetPluginDirectoryNameFromEntryDll(packageEntryDll);
+            if (string.IsNullOrEmpty(pluginDirectoryName))
+            {
+                return false;
+            }
+
+            string pluginsDirectory;
+            if (!TryGetExistingPluginsDirectory(out pluginsDirectory))
+            {
+                return false;
+            }
+
+            string candidatePluginDirectory = Path.Combine(pluginsDirectory, pluginDirectoryName);
+            if (!Directory.Exists(candidatePluginDirectory))
+            {
+                return false;
+            }
+
+            string entryDllName = Path.GetFileName(packageEntryDll);
+            string entryDllPath = Path.Combine(candidatePluginDirectory, entryDllName);
+            string disabledEntryDllPath = entryDllPath + ".disabled";
+            if (File.Exists(entryDllPath))
+            {
+                pluginDirectory = candidatePluginDirectory;
+                installedVersion = GetFileVersion(entryDllPath);
+                return true;
+            }
+
+            if (File.Exists(disabledEntryDllPath))
+            {
+                pluginDirectory = candidatePluginDirectory;
+                installedVersion = GetFileVersion(disabledEntryDllPath);
+                return true;
+            }
+
+            return false;
+        }
+
         private bool TryGetExistingPluginsDirectory(out string pluginsDirectory)
         {
             pluginsDirectory = string.Empty;
@@ -375,6 +418,20 @@ namespace SimplePlanes2ModManager.Services
         private static string NormalizePackagePath(string relativePath)
         {
             return (relativePath ?? string.Empty).Replace('\\', '/').TrimStart('/');
+        }
+
+        private static string GetPluginDirectoryNameFromEntryDll(string packageEntryDll)
+        {
+            string normalizedEntryDll = NormalizePackagePath(packageEntryDll);
+            string pluginsPrefix = "BepInEx/plugins/";
+            if (!normalizedEntryDll.StartsWith(pluginsPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            string pluginRelativePath = normalizedEntryDll.Substring(pluginsPrefix.Length);
+            int separatorIndex = pluginRelativePath.IndexOf('/');
+            return separatorIndex > 0 ? pluginRelativePath.Substring(0, separatorIndex) : string.Empty;
         }
 
         private PluginInfo TryReadPluginInfo(string pluginDirectory)

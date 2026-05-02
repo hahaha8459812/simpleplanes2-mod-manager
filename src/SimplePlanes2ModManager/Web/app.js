@@ -25,6 +25,7 @@
       openConfig: "\u6253\u5f00\u914d\u7f6e\u76ee\u5f55",
       installPluginZip: "\u5b89\u88c5\u63d2\u4ef6\u538b\u7f29\u5305",
       installFromGit: "\u4ece Git \u5b89\u88c5",
+      registerSource: "\u7ed1\u5b9a\u66f4\u65b0\u6e90",
       checkUpdates: "\u68c0\u67e5\u66f4\u65b0",
       gitUrlPlaceholder: "GitHub \u4ed3\u5e93\u5730\u5740\u6216 index.json \u5730\u5740",
       openPluginsFolder: "\u6253\u5f00\u63d2\u4ef6\u76ee\u5f55",
@@ -81,6 +82,7 @@
       openConfig: "Open Config",
       installPluginZip: "Install Plugin Zip",
       installFromGit: "Install from Git",
+      registerSource: "Bind Source",
       checkUpdates: "Check Updates",
       gitUrlPlaceholder: "GitHub repository URL or index.json URL",
       openPluginsFolder: "Open Plugins Folder",
@@ -141,6 +143,7 @@
     setText("openConfigButton", text("openConfig"));
     setText("pluginsTitle", text("plugins"));
     setText("installFromGitButton", text("installFromGit"));
+    setText("registerSourceButton", text("registerSource"));
     setText("checkUpdatesButton", text("checkUpdates"));
     setInputPlaceholder("gitInstallUrlInput", text("gitUrlPlaceholder"));
     setText("installPluginButton", text("installPluginZip"));
@@ -177,6 +180,8 @@
         raw = window.external.InstallPluginFromGit(argument);
       } else if (method === "CheckPluginUpdates") {
         raw = window.external.CheckPluginUpdates();
+      } else if (method === "RegisterPluginSource") {
+        raw = window.external.RegisterPluginSource(argument);
       } else if (method === "UpdatePlugin") {
         raw = window.external.UpdatePlugin(argument);
       } else if (method === "InstallBundledBepInEx") {
@@ -499,6 +504,10 @@
     bindClick("installFromGitButton", function () {
       var input = document.getElementById("gitInstallUrlInput");
       runAndRefresh("InstallPluginFromGit", input ? input.value : "");
+    });
+    bindClick("registerSourceButton", function () {
+      var input = document.getElementById("gitInstallUrlInput");
+      runAndRefresh("RegisterPluginSource", input ? input.value : "");
     });
     bindClick("checkUpdatesButton", function () { runAndRefresh("CheckPluginUpdates"); });
     bindClick("installPluginButton", function () { runAndRefresh("SelectAndInstallPluginZip"); });
