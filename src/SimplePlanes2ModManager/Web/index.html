@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>SimplePlanes 2 Mod Manager</title>
+  <style>
+/* {{APP_CSS}} */
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">SP2</div>
+        <div>
+          <div class="brand-title">Mod Manager</div>
+          <div class="brand-subtitle">SimplePlanes 2</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-section="overview">Overview</button>
+        <button class="nav-item" data-section="plugins">Plugins</button>
+        <button class="nav-item" data-section="tools">Tools</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="small-label">Status</div>
+        <div id="sidebarStatus" class="sidebar-status">Loading...</div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <h1>SimplePlanes 2 Mod Manager</h1>
+          <p id="gamePathText">No game folder selected.</p>
+        </div>
+        <div class="top-actions">
+          <button id="refreshButton" class="button secondary">Refresh</button>
+          <button id="browseButton" class="button primary">Select Game Folder</button>
+        </div>
+      </header>
+
+      <section id="messageBox" class="message hidden"></section>
+
+      <section id="overview" class="section active">
+        <div class="grid two">
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Game</h2>
+              <span id="gameBadge" class="badge">Unknown</span>
+            </div>
+            <p id="gameMessage" class="muted">Waiting for game directory.</p>
+            <div class="button-row">
+              <button id="openGameButton" class="button secondary">Open Game Folder</button>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>BepInEx</h2>
+              <span id="bepinexBadge" class="badge">Unknown</span>
+            </div>
+            <ul class="status-list">
+              <li><span>doorstop_config.ini</span><strong id="doorstopState">--</strong></li>
+              <li><span>winhttp.dll</span><strong id="proxyState">--</strong></li>
+              <li><span>BepInEx.dll</span><strong id="coreState">--</strong></li>
+            </ul>
+            <div class="button-row">
+              <button id="installBepInExButton" class="button primary">Install BepInEx Zip</button>
+              <button id="openConfigButton" class="button secondary">Open Config</button>
+            </div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Installed Plugins</h2>
+            <span id="pluginCountBadge" class="badge">0</span>
+          </div>
+          <div id="overviewPlugins" class="plugin-strip"></div>
+        </article>
+      </section>
+
+      <section id="plugins" class="section">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Plugins</h2>
+            <div class="button-row compact">
+              <button id="installPluginButton" class="button primary">Install Plugin Zip</button>
+              <button id="openPluginsButton" class="button secondary">Open Plugins Folder</button>
+            </div>
+          </div>
+          <div id="pluginList" class="plugin-list"></div>
+        </div>
+      </section>
+
+      <section id="tools" class="section">
+        <div class="grid two">
+          <article class="panel">
+            <h2>Folders</h2>
+            <div class="stack">
+              <button id="toolsOpenGameButton" class="button secondary">Open Game Folder</button>
+              <button id="toolsOpenPluginsButton" class="button secondary">Open Plugins Folder</button>
+              <button id="toolsOpenConfigButton" class="button secondary">Open Config Folder</button>
+            </div>
+          </article>
+          <article class="panel">
+            <h2>Install Rules</h2>
+            <ul class="notes">
+              <li>Close the game before changing plugins.</li>
+              <li>Plugin zips are extracted only inside the selected game folder.</li>
+              <li>Uninstall keeps BepInEx config files.</li>
+              <li>Disabled plugins are renamed to <code>.dll.disabled</code>.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+// {{APP_JS}}
+  </script>
+</body>
+</html>

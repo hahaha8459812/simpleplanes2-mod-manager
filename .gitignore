@@ -1,0 +1,14 @@
+# build outputs
+artifacts/
+release/
+bin/
+obj/
+
+# local runtime data
+*.log
+
+# editor files
+.vs/
+.vscode/
+*.user
+*.suo
