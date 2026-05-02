@@ -4,50 +4,52 @@
 
   var i18n = {
     "zh-CN": {
-      appTitle: "SimplePlanes 2 插件管理器",
-      brandTitle: "插件管理器",
+      appTitle: "\u0053\u0069\u006d\u0070\u006c\u0065\u0050\u006c\u0061\u006e\u0065\u0073\u0020\u0032\u0020\u63d2\u4ef6\u7ba1\u7406\u5668",
+      brandTitle: "\u63d2\u4ef6\u7ba1\u7406\u5668",
       brandSubtitle: "SimplePlanes 2",
-      overview: "概览",
-      plugins: "插件",
-      tools: "工具",
-      status: "状态",
-      loading: "加载中...",
-      noGame: "未选择游戏目录。",
-      refresh: "刷新",
-      selectGameFolder: "选择游戏目录",
-      game: "游戏",
-      unknown: "未知",
-      waitingGame: "等待选择游戏目录。",
-      openGameFolder: "打开游戏目录",
-      installedPlugins: "已安装插件",
-      installBundledBepInEx: "安装内置 BepInEx",
-      installBepInExZip: "安装 BepInEx 压缩包",
-      openConfig: "打开配置目录",
-      installPluginZip: "安装插件压缩包",
-      openPluginsFolder: "打开插件目录",
-      folders: "目录",
-      installRules: "安装规则",
-      ruleCloseGame: "修改插件前请先关闭游戏。",
-      ruleZipSafe: "插件压缩包只会解压到已选择的游戏目录内。",
-      ruleKeepConfig: "卸载插件时会保留 BepInEx 配置文件。",
-      ruleDisabled: "禁用插件会把 DLL 重命名为 .dll.disabled。",
-      gameReady: "游戏目录已就绪。",
-      selectValidGame: "请选择有效的游戏目录。",
-      valid: "有效",
-      missing: "缺失",
-      found: "已找到",
-      incomplete: "不完整",
-      installed: "已安装",
-      noPlugins: "没有找到已安装插件。",
-      enabled: "已启用",
-      disabled: "已禁用",
-      version: "版本",
-      enable: "启用",
-      disable: "禁用",
-      uninstall: "卸载",
-      done: "完成。",
-      bridgeUnavailable: "桥接方法不可用：",
-      operationFailed: "操作失败。",
+      overview: "\u6982\u89c8",
+      plugins: "\u63d2\u4ef6",
+      tools: "\u5de5\u5177",
+      status: "\u72b6\u6001",
+      loading: "\u52a0\u8f7d\u4e2d...",
+      noGame: "\u672a\u9009\u62e9\u6e38\u620f\u76ee\u5f55\u3002",
+      refresh: "\u5237\u65b0",
+      selectGameFolder: "\u9009\u62e9\u6e38\u620f\u76ee\u5f55",
+      game: "\u6e38\u620f",
+      unknown: "\u672a\u77e5",
+      waitingGame: "\u7b49\u5f85\u9009\u62e9\u6e38\u620f\u76ee\u5f55\u3002",
+      openGameFolder: "\u6253\u5f00\u6e38\u620f\u76ee\u5f55",
+      installedPlugins: "\u5df2\u5b89\u88c5\u63d2\u4ef6",
+      installBundledBepInEx: "\u5b89\u88c5\u5185\u7f6e BepInEx",
+      installBepInExZip: "\u5b89\u88c5 BepInEx \u538b\u7f29\u5305",
+      openConfig: "\u6253\u5f00\u914d\u7f6e\u76ee\u5f55",
+      installPluginZip: "\u5b89\u88c5\u63d2\u4ef6\u538b\u7f29\u5305",
+      installFromGit: "\u4ece Git \u5b89\u88c5",
+      gitUrlPlaceholder: "GitHub \u4ed3\u5e93\u5730\u5740\u6216 index.json \u5730\u5740",
+      openPluginsFolder: "\u6253\u5f00\u63d2\u4ef6\u76ee\u5f55",
+      folders: "\u76ee\u5f55",
+      installRules: "\u5b89\u88c5\u89c4\u5219",
+      ruleCloseGame: "\u4fee\u6539\u63d2\u4ef6\u524d\u8bf7\u5148\u5173\u95ed\u6e38\u620f\u3002",
+      ruleZipSafe: "\u63d2\u4ef6\u538b\u7f29\u5305\u53ea\u4f1a\u89e3\u538b\u5230\u5df2\u9009\u62e9\u7684\u6e38\u620f\u76ee\u5f55\u5185\u3002",
+      ruleKeepConfig: "\u5378\u8f7d\u63d2\u4ef6\u65f6\u4f1a\u4fdd\u7559 BepInEx \u914d\u7f6e\u6587\u4ef6\u3002",
+      ruleDisabled: "\u7981\u7528\u63d2\u4ef6\u4f1a\u628a DLL \u91cd\u547d\u540d\u4e3a .dll.disabled\u3002",
+      gameReady: "\u6e38\u620f\u76ee\u5f55\u5df2\u5c31\u7eea\u3002",
+      selectValidGame: "\u8bf7\u9009\u62e9\u6709\u6548\u7684\u6e38\u620f\u76ee\u5f55\u3002",
+      valid: "\u6709\u6548",
+      missing: "\u7f3a\u5931",
+      found: "\u5df2\u627e\u5230",
+      incomplete: "\u4e0d\u5b8c\u6574",
+      installed: "\u5df2\u5b89\u88c5",
+      noPlugins: "\u6ca1\u6709\u627e\u5230\u5df2\u5b89\u88c5\u63d2\u4ef6\u3002",
+      enabled: "\u5df2\u542f\u7528",
+      disabled: "\u5df2\u7981\u7528",
+      version: "\u7248\u672c",
+      enable: "\u542f\u7528",
+      disable: "\u7981\u7528",
+      uninstall: "\u5378\u8f7d",
+      done: "\u5b8c\u6210\u3002",
+      bridgeUnavailable: "\u6865\u63a5\u65b9\u6cd5\u4e0d\u53ef\u7528\uff1a",
+      operationFailed: "\u64cd\u4f5c\u5931\u8d25\u3002",
       switchLanguage: "English"
     },
     "en-US": {
@@ -71,6 +73,8 @@
       installBepInExZip: "Install BepInEx Zip",
       openConfig: "Open Config",
       installPluginZip: "Install Plugin Zip",
+      installFromGit: "Install from Git",
+      gitUrlPlaceholder: "GitHub repository URL or index.json URL",
       openPluginsFolder: "Open Plugins Folder",
       folders: "Folders",
       installRules: "Install Rules",
@@ -95,17 +99,13 @@
       done: "Done.",
       bridgeUnavailable: "Bridge method is unavailable: ",
       operationFailed: "Operation failed.",
-      switchLanguage: "中文"
+      switchLanguage: "\u4e2d\u6587"
     }
   };
 
-  function dictionary() {
-    return i18n[language] || i18n["zh-CN"];
-  }
-
   function text(key) {
-    var currentDictionary = dictionary();
-    return currentDictionary[key] || key;
+    var dictionary = i18n[language] || i18n["zh-CN"];
+    return dictionary[key] || key;
   }
 
   function updateUiLanguage() {
@@ -126,6 +126,8 @@
     setText("installBepInExButton", text("installBepInExZip"));
     setText("openConfigButton", text("openConfig"));
     setText("pluginsTitle", text("plugins"));
+    setText("installFromGitButton", text("installFromGit"));
+    setInputPlaceholder("gitInstallUrlInput", text("gitUrlPlaceholder"));
     setText("installPluginButton", text("installPluginZip"));
     setText("openPluginsButton", text("openPluginsFolder"));
     setText("foldersTitle", text("folders"));
@@ -156,6 +158,8 @@
         raw = window.external.SetLanguage(argument);
       } else if (method === "SelectAndInstallPluginZip") {
         raw = window.external.SelectAndInstallPluginZip();
+      } else if (method === "InstallPluginFromGit") {
+        raw = window.external.InstallPluginFromGit(argument);
       } else if (method === "InstallBundledBepInEx") {
         raw = window.external.InstallBundledBepInEx();
       } else if (method === "SelectAndInstallBepInExZip") {
@@ -191,12 +195,7 @@
     }
 
     state = response.data;
-    if (state && state.settings && state.settings.language === "en-US") {
-      language = "en-US";
-    } else {
-      language = "zh-CN";
-    }
-
+    language = state && state.settings && state.settings.language === "en-US" ? "en-US" : "zh-CN";
     updateUiLanguage();
     renderState();
   }
@@ -208,19 +207,13 @@
     }
 
     if (!response.ok) {
-      if (response.message) {
-        showMessage(response.message, true);
-      }
+      showMessage(response.message || text("operationFailed"), true);
       return;
     }
 
     if (response.data && response.data.game) {
       state = response.data;
-      if (state.settings && state.settings.language === "en-US") {
-        language = "en-US";
-      } else {
-        language = "zh-CN";
-      }
+      language = state.settings && state.settings.language === "en-US" ? "en-US" : "zh-CN";
       updateUiLanguage();
       renderState();
       showMessage(text("done"), false);
@@ -373,6 +366,13 @@
     }
   }
 
+  function setInputPlaceholder(id, value) {
+    var element = document.getElementById(id);
+    if (element) {
+      element.setAttribute("placeholder", value);
+    }
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, "&amp;")
@@ -434,6 +434,10 @@
     });
     bindClick("refreshButton", refresh);
     bindClick("browseButton", function () { runAndRefresh("BrowseGameDirectory"); });
+    bindClick("installFromGitButton", function () {
+      var input = document.getElementById("gitInstallUrlInput");
+      runAndRefresh("InstallPluginFromGit", input ? input.value : "");
+    });
     bindClick("installPluginButton", function () { runAndRefresh("SelectAndInstallPluginZip"); });
     bindClick("installBundledBepInExButton", function () { runAndRefresh("InstallBundledBepInEx"); });
     bindClick("installBepInExButton", function () { runAndRefresh("SelectAndInstallBepInExZip"); });

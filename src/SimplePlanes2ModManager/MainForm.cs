@@ -19,6 +19,7 @@ namespace SimplePlanes2ModManager
         private readonly GameDirectoryService _gameDirectoryService;
         private readonly BepInExService _bepInExService;
         private readonly PluginService _pluginService;
+        private readonly RemotePluginService _remotePluginService;
 
         public MainForm()
         {
@@ -33,6 +34,7 @@ namespace SimplePlanes2ModManager
             _gameDirectoryService = new GameDirectoryService(_settingsService);
             _bepInExService = new BepInExService(_gameDirectoryService);
             _pluginService = new PluginService(_gameDirectoryService);
+            _remotePluginService = new RemotePluginService(_pluginService);
 
             _browser = new WebBrowser();
             _browser.Dock = DockStyle.Fill;
@@ -45,7 +47,8 @@ namespace SimplePlanes2ModManager
                 _settingsService,
                 _gameDirectoryService,
                 _bepInExService,
-                _pluginService);
+                _pluginService,
+                _remotePluginService);
 
             Controls.Add(_browser);
             Load += OnLoad;

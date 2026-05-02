@@ -18,6 +18,7 @@ namespace SimplePlanes2ModManager.Bridge
         private readonly GameDirectoryService _gameDirectoryService;
         private readonly BepInExService _bepInExService;
         private readonly PluginService _pluginService;
+        private readonly RemotePluginService _remotePluginService;
         private readonly JavaScriptSerializer _serializer;
 
         internal WebBridge(
@@ -25,13 +26,15 @@ namespace SimplePlanes2ModManager.Bridge
             ManagerSettingsService settingsService,
             GameDirectoryService gameDirectoryService,
             BepInExService bepInExService,
-            PluginService pluginService)
+            PluginService pluginService,
+            RemotePluginService remotePluginService)
         {
             _owner = owner;
             _settingsService = settingsService;
             _gameDirectoryService = gameDirectoryService;
             _bepInExService = bepInExService;
             _pluginService = pluginService;
+            _remotePluginService = remotePluginService;
             _serializer = new JavaScriptSerializer();
         }
 
@@ -95,6 +98,19 @@ namespace SimplePlanes2ModManager.Bridge
             {
                 _pluginService.InstallPluginZip(zipPath);
             });
+        }
+
+        public string InstallPluginFromGit(string repositoryOrIndexUrl)
+        {
+            try
+            {
+                _remotePluginService.InstallFromGit(repositoryOrIndexUrl);
+                return GetState();
+            }
+            catch (Exception exception)
+            {
+                return ToJson(BridgeResponse.Failure(exception.Message));
+            }
         }
 
         public string SelectAndInstallBepInExZip()

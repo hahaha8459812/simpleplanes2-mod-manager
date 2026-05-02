@@ -8,6 +8,11 @@ namespace SimplePlanes2ModManager.Services
     {
         public static void ExtractZipToDirectorySafely(string zipPath, string targetDirectory)
         {
+            ExtractZipToDirectorySafely(zipPath, targetDirectory, new string[0]);
+        }
+
+        public static void ExtractZipToDirectorySafely(string zipPath, string targetDirectory, string[] skippedRootFiles)
+        {
             if (string.IsNullOrEmpty(zipPath) || !File.Exists(zipPath))
             {
                 throw new FileNotFoundException("Zip file does not exist.");
@@ -22,7 +27,7 @@ namespace SimplePlanes2ModManager.Services
             using (ZipArchive archive = ZipFile.OpenRead(zipPath))
             {
                 ValidateArchiveEntries(archive, fullTargetDirectory);
-                ExtractArchiveEntries(archive, fullTargetDirectory);
+                ExtractArchiveEntries(archive, fullTargetDirectory, skippedRootFiles);
             }
         }
 
@@ -42,7 +47,7 @@ namespace SimplePlanes2ModManager.Services
             using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read, false))
             {
                 ValidateArchiveEntries(archive, fullTargetDirectory);
-                ExtractArchiveEntries(archive, fullTargetDirectory);
+                ExtractArchiveEntries(archive, fullTargetDirectory, new string[0]);
             }
         }
 
@@ -69,12 +74,17 @@ namespace SimplePlanes2ModManager.Services
             }
         }
 
-        private static void ExtractArchiveEntries(ZipArchive archive, string fullTargetDirectory)
+        private static void ExtractArchiveEntries(ZipArchive archive, string fullTargetDirectory, string[] skippedRootFiles)
         {
             foreach (ZipArchiveEntry entry in archive.Entries)
             {
                 string normalizedEntryName = entry.FullName.Replace('/', Path.DirectorySeparatorChar);
                 if (string.IsNullOrEmpty(normalizedEntryName))
+                {
+                    continue;
+                }
+
+                if (ShouldSkipArchiveEntry(normalizedEntryName, skippedRootFiles))
                 {
                     continue;
                 }
@@ -97,6 +107,29 @@ namespace SimplePlanes2ModManager.Services
 
                 entry.ExtractToFile(destinationPath, true);
             }
+        }
+
+        private static bool ShouldSkipArchiveEntry(string normalizedEntryName, string[] skippedRootFiles)
+        {
+            if (skippedRootFiles == null || skippedRootFiles.Length == 0)
+            {
+                return false;
+            }
+
+            if (normalizedEntryName.IndexOf(Path.DirectorySeparatorChar) >= 0)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < skippedRootFiles.Length; index++)
+            {
+                if (string.Equals(normalizedEntryName, skippedRootFiles[index], StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string EnsureTrailingSeparator(string directoryPath)

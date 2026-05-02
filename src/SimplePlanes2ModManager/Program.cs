@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using System;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -12,6 +13,7 @@ namespace SimplePlanes2ModManager
         {
             EnableDpiAwareness();
             EnableModernBrowserMode();
+            EnableModernTls();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
@@ -47,6 +49,14 @@ namespace SimplePlanes2ModManager
             {
                 // Browser emulation is a UI compatibility hint. The manager can still run without it.
             }
+        }
+
+        private static void EnableModernTls()
+        {
+            ServicePointManager.SecurityProtocol =
+                SecurityProtocolType.Tls12 |
+                SecurityProtocolType.Tls11 |
+                SecurityProtocolType.Tls;
         }
 
         [DllImport("user32.dll")]

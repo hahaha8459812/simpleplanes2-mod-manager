@@ -3,12 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
+using System.Web.Script.Serialization;
 
 namespace SimplePlanes2ModManager.Services
 {
     internal sealed class PluginService
     {
+        private static readonly string[] PackageMetadataFiles =
+        {
+            "mod.json",
+            "README.md",
+            "README.en.md"
+        };
+
         private readonly GameDirectoryService _gameDirectoryService;
+        private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
 
         public PluginService(GameDirectoryService gameDirectoryService)
         {
@@ -48,7 +58,8 @@ namespace SimplePlanes2ModManager.Services
 
             _gameDirectoryService.ThrowIfGameIsRunning();
             string gameDirectory = _gameDirectoryService.GetGameDirectoryOrThrow();
-            ZipInstallService.ExtractZipToDirectorySafely(zipPath, gameDirectory);
+            ValidatePluginPackage(zipPath);
+            ZipInstallService.ExtractZipToDirectorySafely(zipPath, gameDirectory, PackageMetadataFiles);
         }
 
         public void EnablePlugin(string pluginId)
@@ -106,6 +117,123 @@ namespace SimplePlanes2ModManager.Services
 
             pluginsDirectory = Path.Combine(gameDirectory, "BepInEx", "plugins");
             return Directory.Exists(pluginsDirectory);
+        }
+
+        private void ValidatePluginPackage(string zipPath)
+        {
+            using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+            {
+                ZipArchiveEntry manifestEntry = archive.GetEntry("mod.json");
+                if (manifestEntry == null)
+                {
+                    throw new InvalidOperationException("Plugin zip must contain mod.json at the package root.");
+                }
+
+                PluginManifest manifest = ReadPluginManifest(manifestEntry);
+                ValidatePluginManifest(manifest);
+                ValidateManifestPaths(manifest);
+            }
+        }
+
+        private PluginManifest ReadPluginManifest(ZipArchiveEntry manifestEntry)
+        {
+            using (Stream stream = manifestEntry.Open())
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                PluginManifest manifest = _serializer.Deserialize<PluginManifest>(reader.ReadToEnd());
+                if (manifest == null)
+                {
+                    throw new InvalidOperationException("mod.json is empty or invalid.");
+                }
+
+                return manifest;
+            }
+        }
+
+        private static void ValidatePluginManifest(PluginManifest manifest)
+        {
+            if (string.IsNullOrEmpty(manifest.id))
+            {
+                throw new InvalidOperationException("mod.json is missing id.");
+            }
+
+            if (string.IsNullOrEmpty(manifest.name))
+            {
+                throw new InvalidOperationException("mod.json is missing name.");
+            }
+
+            if (string.IsNullOrEmpty(manifest.version))
+            {
+                throw new InvalidOperationException("mod.json is missing version.");
+            }
+
+            if (string.IsNullOrEmpty(manifest.description))
+            {
+                throw new InvalidOperationException("mod.json is missing description.");
+            }
+
+            if (string.IsNullOrEmpty(manifest.fileName))
+            {
+                throw new InvalidOperationException("mod.json is missing fileName.");
+            }
+
+            if (string.IsNullOrEmpty(manifest.entryDll))
+            {
+                throw new InvalidOperationException("mod.json is missing entryDll.");
+            }
+        }
+
+        private static void ValidateManifestPaths(PluginManifest manifest)
+        {
+            if (!IsSafeRelativePath(manifest.entryDll) ||
+                !manifest.entryDll.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("mod.json entryDll must be a relative dll path.");
+            }
+
+            if (!string.IsNullOrEmpty(manifest.pluginDirectory) &&
+                !IsSafeRelativePath(manifest.pluginDirectory))
+            {
+                throw new InvalidOperationException("mod.json pluginDirectory must be a safe relative path.");
+            }
+
+            if (manifest.configFiles == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < manifest.configFiles.Length; index++)
+            {
+                if (!IsSafeRelativePath(manifest.configFiles[index]))
+                {
+                    throw new InvalidOperationException("mod.json configFiles contains an unsafe path.");
+                }
+            }
+        }
+
+        private static bool IsSafeRelativePath(string relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                return false;
+            }
+
+            string normalizedPath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+            if (Path.IsPathRooted(normalizedPath))
+            {
+                return false;
+            }
+
+            string[] segments = normalizedPath.Split(Path.DirectorySeparatorChar);
+            for (int index = 0; index < segments.Length; index++)
+            {
+                if (segments[index] == "..")
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private PluginInfo TryReadPluginInfo(string pluginDirectory)
