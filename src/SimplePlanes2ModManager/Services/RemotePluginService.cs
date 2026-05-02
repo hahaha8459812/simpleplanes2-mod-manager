@@ -30,7 +30,7 @@ namespace SimplePlanes2ModManager.Services
             string packagePath = DownloadPackage(pluginIndex);
             try
             {
-                _pluginService.InstallPluginZip(packagePath);
+                _pluginService.InstallPluginZip(packagePath, pluginIndex);
             }
             finally
             {

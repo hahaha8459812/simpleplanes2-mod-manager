@@ -45,7 +45,7 @@ artifacts\SimplePlanes2ModManager.exe
 
 ### 发行包
 
-普通插件发行包不应包含 BepInEx，只包含插件本体和必要资源。推荐结构：
+普通插件发行包禁止包含 BepInEx 核心文件，只能包含插件本体、必要资源和包元数据。推荐结构：
 
 ```text
 SimplePlanes2Example-Plugin.zip
@@ -80,8 +80,25 @@ SimplePlanes2Example-Plugin.zip
 - `version` 必须与本次发行版本一致。
 - `description` 是简短简介。
 - `fileName` 必须与发行包文件名一致。
-- `entryDll` 指向插件主 DLL。
-- 更新插件时默认不要覆盖用户配置。
+- `entryDll` 指向插件主 DLL，必须位于 `BepInEx/plugins` 下，并且必须真实存在于发行包内。
+- 如果提供 `pluginDirectory`，`entryDll` 必须位于 `pluginDirectory` 下。
+- `configFiles` 只用于声明插件使用的用户配置文件，发行包内禁止包含这些配置文件。
+- 更新插件时不得覆盖用户配置。
+
+发行包禁止包含以下内容：
+
+```text
+winhttp.dll
+doorstop_config.ini
+.doorstop_version
+changelog.txt
+BepInEx/core/**
+BepInEx/patchers/**
+BepInEx/config/**
+BepInEx/LogOutput.log
+```
+
+这些文件由管理器或 BepInEx 运行环境维护，普通插件包不得覆盖。
 
 ### 仓库索引
 
@@ -108,6 +125,7 @@ SimplePlanes2Example-Plugin.zip
 - `version` 必须是最新版本。
 - `fileName` 必须是最新发行包文件名。
 - `downloadUrl` 必须是可直接下载 zip 的 http/https 地址。
+- `index.json` 的 `id`、`version`、`fileName`、`entryDll` 必须与发行包内的 `mod.json` 一致。
 - `index.json` 应该放在默认分支根目录，确保以下地址可访问：
 
 ```text

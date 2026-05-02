@@ -51,6 +51,11 @@ namespace SimplePlanes2ModManager.Services
 
         public void InstallPluginZip(string zipPath)
         {
+            InstallPluginZip(zipPath, null);
+        }
+
+        public void InstallPluginZip(string zipPath, PluginIndex expectedPluginIndex)
+        {
             if (string.IsNullOrEmpty(zipPath) || !File.Exists(zipPath))
             {
                 throw new FileNotFoundException("Plugin zip does not exist.");
@@ -58,7 +63,13 @@ namespace SimplePlanes2ModManager.Services
 
             _gameDirectoryService.ThrowIfGameIsRunning();
             string gameDirectory = _gameDirectoryService.GetGameDirectoryOrThrow();
-            ValidatePluginPackage(zipPath);
+            string packageFileName = expectedPluginIndex == null ? Path.GetFileName(zipPath) : expectedPluginIndex.fileName;
+            PluginManifest manifest = ValidatePluginPackage(zipPath, packageFileName);
+            if (expectedPluginIndex != null)
+            {
+                ValidatePluginIndexMatchesManifest(expectedPluginIndex, manifest);
+            }
+
             ZipInstallService.ExtractZipToDirectorySafely(zipPath, gameDirectory, PackageMetadataFiles);
         }
 
@@ -119,7 +130,7 @@ namespace SimplePlanes2ModManager.Services
             return Directory.Exists(pluginsDirectory);
         }
 
-        private void ValidatePluginPackage(string zipPath)
+        private PluginManifest ValidatePluginPackage(string zipPath, string packageFileName)
         {
             using (ZipArchive archive = ZipFile.OpenRead(zipPath))
             {
@@ -131,7 +142,10 @@ namespace SimplePlanes2ModManager.Services
 
                 PluginManifest manifest = ReadPluginManifest(manifestEntry);
                 ValidatePluginManifest(manifest);
+                ValidatePackageFileName(manifest, packageFileName);
                 ValidateManifestPaths(manifest);
+                ValidatePackageEntries(archive, manifest);
+                return manifest;
             }
         }
 
@@ -191,10 +205,30 @@ namespace SimplePlanes2ModManager.Services
                 throw new InvalidOperationException("mod.json entryDll must be a relative dll path.");
             }
 
+            string normalizedEntryDll = NormalizePackagePath(manifest.entryDll);
+            if (!normalizedEntryDll.StartsWith("BepInEx/plugins/", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("mod.json entryDll must be under BepInEx/plugins.");
+            }
+
             if (!string.IsNullOrEmpty(manifest.pluginDirectory) &&
                 !IsSafeRelativePath(manifest.pluginDirectory))
             {
                 throw new InvalidOperationException("mod.json pluginDirectory must be a safe relative path.");
+            }
+
+            if (!string.IsNullOrEmpty(manifest.pluginDirectory))
+            {
+                string normalizedPluginDirectory = NormalizePackagePath(manifest.pluginDirectory).TrimEnd('/');
+                if (!normalizedPluginDirectory.StartsWith("BepInEx/plugins/", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("mod.json pluginDirectory must be under BepInEx/plugins.");
+                }
+
+                if (!normalizedEntryDll.StartsWith(normalizedPluginDirectory + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("mod.json entryDll must be inside pluginDirectory.");
+                }
             }
 
             if (manifest.configFiles == null)
@@ -204,10 +238,109 @@ namespace SimplePlanes2ModManager.Services
 
             for (int index = 0; index < manifest.configFiles.Length; index++)
             {
-                if (!IsSafeRelativePath(manifest.configFiles[index]))
+                string configFile = manifest.configFiles[index];
+                if (!IsSafeRelativePath(configFile))
                 {
                     throw new InvalidOperationException("mod.json configFiles contains an unsafe path.");
                 }
+
+                if (!NormalizePackagePath(configFile).StartsWith("BepInEx/config/", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("mod.json configFiles must be under BepInEx/config.");
+                }
+            }
+        }
+
+        private static void ValidatePackageFileName(PluginManifest manifest, string packageFileName)
+        {
+            string manifestFileName = Path.GetFileName(manifest.fileName);
+            if (string.IsNullOrEmpty(manifestFileName) ||
+                !manifestFileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("mod.json fileName must be a zip file name.");
+            }
+
+            if (!string.IsNullOrEmpty(packageFileName) &&
+                !string.Equals(manifestFileName, Path.GetFileName(packageFileName), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("mod.json fileName must match the plugin zip file name.");
+            }
+        }
+
+        private static void ValidatePackageEntries(ZipArchive archive, PluginManifest manifest)
+        {
+            bool hasEntryDll = false;
+            string normalizedEntryDll = NormalizePackagePath(manifest.entryDll);
+
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                string normalizedEntryName = NormalizePackagePath(entry.FullName);
+                if (string.IsNullOrEmpty(normalizedEntryName))
+                {
+                    continue;
+                }
+
+                if (IsForbiddenPluginPackageEntry(normalizedEntryName))
+                {
+                    throw new InvalidOperationException("Plugin zip must not include BepInEx core files or user config: " + entry.FullName);
+                }
+
+                if (string.Equals(normalizedEntryName, normalizedEntryDll, StringComparison.OrdinalIgnoreCase))
+                {
+                    hasEntryDll = true;
+                }
+            }
+
+            if (!hasEntryDll)
+            {
+                throw new InvalidOperationException("mod.json entryDll was not found in the plugin zip.");
+            }
+        }
+
+        private static bool IsForbiddenPluginPackageEntry(string normalizedEntryName)
+        {
+            string entryName = normalizedEntryName.TrimEnd('/');
+            if (string.Equals(entryName, "winhttp.dll", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(entryName, "doorstop_config.ini", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(entryName, ".doorstop_version", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(entryName, "changelog.txt", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return IsPackagePathOrChild(entryName, "BepInEx/core") ||
+                   IsPackagePathOrChild(entryName, "BepInEx/patchers") ||
+                   IsPackagePathOrChild(entryName, "BepInEx/config") ||
+                   string.Equals(entryName, "BepInEx/LogOutput.log", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsPackagePathOrChild(string normalizedEntryName, string parentPath)
+        {
+            return string.Equals(normalizedEntryName, parentPath, StringComparison.OrdinalIgnoreCase) ||
+                   normalizedEntryName.StartsWith(parentPath + "/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ValidatePluginIndexMatchesManifest(PluginIndex pluginIndex, PluginManifest manifest)
+        {
+            if (!string.Equals(pluginIndex.id, manifest.id, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("index.json id does not match mod.json id.");
+            }
+
+            if (!string.Equals(pluginIndex.version, manifest.version, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("index.json version does not match mod.json version.");
+            }
+
+            if (!string.Equals(pluginIndex.fileName, manifest.fileName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("index.json fileName does not match mod.json fileName.");
+            }
+
+            if (!string.IsNullOrEmpty(pluginIndex.entryDll) &&
+                !string.Equals(NormalizePackagePath(pluginIndex.entryDll), NormalizePackagePath(manifest.entryDll), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("index.json entryDll does not match mod.json entryDll.");
             }
         }
 
@@ -234,6 +367,11 @@ namespace SimplePlanes2ModManager.Services
             }
 
             return true;
+        }
+
+        private static string NormalizePackagePath(string relativePath)
+        {
+            return (relativePath ?? string.Empty).Replace('\\', '/').TrimStart('/');
         }
 
         private PluginInfo TryReadPluginInfo(string pluginDirectory)

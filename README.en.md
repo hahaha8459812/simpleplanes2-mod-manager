@@ -45,7 +45,7 @@ To make installation and update checks work consistently, plugin repositories an
 
 ### Release Package
 
-Regular plugin release packages should not include BepInEx. They should only include the plugin itself and required resources. Recommended layout:
+Regular plugin release packages must not include BepInEx core files. They may only include the plugin itself, required resources, and package metadata. Recommended layout:
 
 ```text
 SimplePlanes2Example-Plugin.zip
@@ -80,8 +80,25 @@ Requirements:
 - `version` must match the release version.
 - `description` is a short plugin description.
 - `fileName` must match the release package file name.
-- `entryDll` points to the main plugin DLL.
-- Plugin updates should not overwrite user config by default.
+- `entryDll` points to the main plugin DLL, must be under `BepInEx/plugins`, and must exist in the release package.
+- If `pluginDirectory` is provided, `entryDll` must be inside `pluginDirectory`.
+- `configFiles` only declares user config files used by the plugin. Release packages must not include these config files.
+- Plugin updates must not overwrite user config.
+
+Release packages must not include:
+
+```text
+winhttp.dll
+doorstop_config.ini
+.doorstop_version
+changelog.txt
+BepInEx/core/**
+BepInEx/patchers/**
+BepInEx/config/**
+BepInEx/LogOutput.log
+```
+
+These files are maintained by the manager or the BepInEx runtime. Regular plugin packages must not overwrite them.
 
 ### Repository Index
 
@@ -108,6 +125,7 @@ Requirements:
 - `version` must be the latest version.
 - `fileName` must be the latest release package file name.
 - `downloadUrl` must be a directly downloadable http/https zip URL.
+- `id`, `version`, `fileName`, and `entryDll` in `index.json` must match the package `mod.json`.
 - `index.json` should live in the default branch root so this URL works:
 
 ```text
