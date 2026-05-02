@@ -290,11 +290,28 @@ namespace SimplePlanes2ModManager.Services
                     throw new InvalidOperationException("mod.json configFiles contains an unsafe path.");
                 }
 
-                if (!NormalizePackagePath(configFile).StartsWith("BepInEx/config/", StringComparison.OrdinalIgnoreCase))
+                if (!IsDeclaredConfigPathAllowed(manifest, configFile))
                 {
-                    throw new InvalidOperationException("mod.json configFiles must be under BepInEx/config.");
+                    throw new InvalidOperationException("mod.json configFiles must be under BepInEx/config or pluginDirectory.");
                 }
             }
+        }
+
+        private static bool IsDeclaredConfigPathAllowed(PluginManifest manifest, string configFile)
+        {
+            string normalizedConfigFile = NormalizePackagePath(configFile);
+            if (normalizedConfigFile.StartsWith("BepInEx/config/", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.IsNullOrEmpty(manifest.pluginDirectory))
+            {
+                return false;
+            }
+
+            string normalizedPluginDirectory = NormalizePackagePath(manifest.pluginDirectory).TrimEnd('/');
+            return normalizedConfigFile.StartsWith(normalizedPluginDirectory + "/", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void ValidatePackageFileName(PluginManifest manifest, string packageFileName)

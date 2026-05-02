@@ -69,7 +69,8 @@ The package root must contain `mod.json`, which describes the plugin and the mai
   "entryDll": "BepInEx/plugins/SimplePlanes2Example/SimplePlanes2Example.dll",
   "pluginDirectory": "BepInEx/plugins/SimplePlanes2Example",
   "configFiles": [
-    "BepInEx/config/com.example.simpleplanes2.example.cfg"
+    "BepInEx/config/com.example.simpleplanes2.example.cfg",
+    "BepInEx/plugins/SimplePlanes2Example/settings.json"
   ]
 }
 ```
@@ -83,7 +84,8 @@ Requirements:
 - `fileName` must match the release package file name.
 - `entryDll` points to the main plugin DLL, must be under `BepInEx/plugins`, and must exist in the release package.
 - If `pluginDirectory` is provided, `entryDll` must be inside `pluginDirectory`.
-- `configFiles` only declares user config files used by the plugin. Release packages must not include these config files.
+- `configFiles` only declares user config files used by the plugin. It may point to BepInEx config files under `BepInEx/config` or plugin-owned settings under `pluginDirectory`.
+- Release packages must not include user config files under `BepInEx/config`.
 - Plugin updates must not overwrite user config.
 
 Release packages must not include:

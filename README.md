@@ -69,7 +69,8 @@ SimplePlanes2Example-Plugin.zip
   "entryDll": "BepInEx/plugins/SimplePlanes2Example/SimplePlanes2Example.dll",
   "pluginDirectory": "BepInEx/plugins/SimplePlanes2Example",
   "configFiles": [
-    "BepInEx/config/com.example.simpleplanes2.example.cfg"
+    "BepInEx/config/com.example.simpleplanes2.example.cfg",
+    "BepInEx/plugins/SimplePlanes2Example/settings.json"
   ]
 }
 ```
@@ -83,7 +84,8 @@ SimplePlanes2Example-Plugin.zip
 - `fileName` 必须与发行包文件名一致。
 - `entryDll` 指向插件主 DLL，必须位于 `BepInEx/plugins` 下，并且必须真实存在于发行包内。
 - 如果提供 `pluginDirectory`，`entryDll` 必须位于 `pluginDirectory` 下。
-- `configFiles` 只用于声明插件使用的用户配置文件，发行包内禁止包含这些配置文件。
+- `configFiles` 只用于声明插件使用的用户配置文件。它可以指向 `BepInEx/config` 下的 BepInEx 配置，也可以指向 `pluginDirectory` 下由插件自己维护的设置文件。
+- 发行包内禁止包含 `BepInEx/config` 下的用户配置文件。
 - 更新插件时不得覆盖用户配置。
 
 发行包禁止包含以下内容：
