@@ -1,66 +1,78 @@
 <!doctype html>
-<html>
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SimplePlanes 2 Mod Manager</title>
   <style>
 /* {{APP_CSS}} */
   </style>
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">SP2</div>
-        <div>
-          <div id="brandTitle" class="brand-title">Mod Manager</div>
-          <div id="brandSubtitle" class="brand-subtitle">SimplePlanes 2</div>
+  <div class="app-shell">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-mark">SP2</div>
+          <div>
+            <div id="brandTitle" class="brand-title">插件管理器</div>
+            <div id="brandSubtitle" class="brand-subtitle">SimplePlanes 2</div>
+          </div>
+        </div>
+
+        <nav id="primaryNav" class="nav" aria-label="主导航">
+          <button id="navOverview" class="nav-item active" data-section="overview" type="button">概览</button>
+          <button id="navPlugins" class="nav-item" data-section="plugins" type="button">插件</button>
+          <button id="navTools" class="nav-item" data-section="tools" type="button">工具</button>
+        </nav>
+
+        <div class="header-actions">
+          <button id="languageButton" class="button secondary" type="button">English</button>
+          <button id="refreshButton" class="button secondary" type="button">刷新</button>
+          <button id="browseButton" class="button primary" type="button">选择游戏目录</button>
         </div>
       </div>
-      <nav class="nav">
-        <button id="navOverview" class="nav-item active" data-section="overview">Overview</button>
-        <button id="navPlugins" class="nav-item" data-section="plugins">Plugins</button>
-        <button id="navTools" class="nav-item" data-section="tools">Tools</button>
-      </nav>
-      <div class="sidebar-footer">
-        <div id="sidebarStatusLabel" class="small-label">Status</div>
-        <div id="sidebarStatus" class="sidebar-status">Loading...</div>
-      </div>
-    </aside>
+    </header>
 
-    <main class="content">
-      <header class="topbar">
-        <div>
+    <main class="page-main">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p id="heroKicker" class="eyebrow">MOD MANAGER</p>
           <h1 id="mainTitle">SimplePlanes 2 Mod Manager</h1>
-          <p id="gamePathText">No game folder selected.</p>
+          <p id="gamePathText" class="hero-description">未选择游戏目录。</p>
         </div>
-        <div class="top-actions">
-          <button id="languageButton" class="button secondary">中文</button>
-          <button id="refreshButton" class="button secondary">Refresh</button>
-          <button id="browseButton" class="button primary">Select Game Folder</button>
+        <div class="status-summary">
+          <div id="sidebarStatusLabel" class="small-label">状态</div>
+          <div id="sidebarStatus" class="status-text">加载中...</div>
         </div>
-      </header>
+      </section>
 
-      <section id="messageBox" class="message hidden"></section>
+      <section id="messageBox" class="message hidden" role="status" aria-live="polite"></section>
 
       <section id="overview" class="section active">
         <div class="grid two">
-          <article class="panel">
+          <article class="panel feature-panel">
             <div class="panel-header">
-              <h2 id="gameTitle">Game</h2>
-              <span id="gameBadge" class="badge">Unknown</span>
+              <div>
+                <p id="gameKicker" class="panel-kicker">Game</p>
+                <h2 id="gameTitle">游戏</h2>
+              </div>
+              <span id="gameBadge" class="badge">未知</span>
             </div>
-            <p id="gameMessage" class="muted">Waiting for game directory.</p>
+            <p id="gameMessage" class="muted">等待选择游戏目录。</p>
             <div class="button-row">
-              <button id="openGameButton" class="button secondary">Open Game Folder</button>
+              <button id="openGameButton" class="button secondary" type="button">打开游戏目录</button>
             </div>
           </article>
 
-          <article class="panel">
+          <article class="panel feature-panel">
             <div class="panel-header">
-              <h2>BepInEx</h2>
-              <span id="bepinexBadge" class="badge">Unknown</span>
+              <div>
+                <p id="runtimeKicker" class="panel-kicker">Runtime</p>
+                <h2>BepInEx</h2>
+              </div>
+              <span id="bepinexBadge" class="badge">未知</span>
             </div>
             <ul class="status-list">
               <li><span>doorstop_config.ini</span><strong id="doorstopState">--</strong></li>
@@ -68,16 +80,19 @@
               <li><span>BepInEx.dll</span><strong id="coreState">--</strong></li>
             </ul>
             <div class="button-row">
-              <button id="installBundledBepInExButton" class="button primary">Install Bundled BepInEx</button>
-              <button id="installBepInExButton" class="button secondary">Install BepInEx Zip</button>
-              <button id="openConfigButton" class="button secondary">Open Config</button>
+              <button id="installBundledBepInExButton" class="button primary" type="button">安装内置 BepInEx</button>
+              <button id="installBepInExButton" class="button secondary" type="button">安装 BepInEx 压缩包</button>
+              <button id="openConfigButton" class="button secondary" type="button">打开配置目录</button>
             </div>
           </article>
         </div>
 
         <article class="panel">
           <div class="panel-header">
-            <h2 id="installedPluginsTitle">Installed Plugins</h2>
+            <div>
+              <p id="installedKicker" class="panel-kicker">Installed</p>
+              <h2 id="installedPluginsTitle">已安装插件</h2>
+            </div>
             <span id="pluginCountBadge" class="badge">0</span>
           </div>
           <div id="overviewPlugins" class="plugin-strip"></div>
@@ -86,15 +101,19 @@
 
       <section id="plugins" class="section">
         <div class="panel">
-          <div class="panel-header">
-            <h2 id="pluginsTitle">Plugins</h2>
+          <div class="panel-header plugins-header">
+            <div>
+              <p id="libraryKicker" class="panel-kicker">Library</p>
+              <h2 id="pluginsTitle">插件</h2>
+            </div>
             <div class="button-row compact">
-              <input id="gitInstallUrlInput" class="text-input" type="text" value="" />
-              <button id="installFromGitButton" class="button primary">Install from Git</button>
-              <button id="registerSourceButton" class="button secondary">Bind Source</button>
-              <button id="checkUpdatesButton" class="button secondary">Check Updates</button>
-              <button id="installPluginButton" class="button primary">Install Plugin Zip</button>
-              <button id="openPluginsButton" class="button secondary">Open Plugins Folder</button>
+              <label id="gitInstallUrlLabel" class="input-label" for="gitInstallUrlInput">GitHub 仓库或 index.json</label>
+              <input id="gitInstallUrlInput" class="text-input" type="text" value="" aria-labelledby="gitInstallUrlLabel">
+              <button id="installFromGitButton" class="button primary" type="button">从 Git 安装</button>
+              <button id="registerSourceButton" class="button secondary" type="button">绑定更新源</button>
+              <button id="checkUpdatesButton" class="button secondary" type="button">检查更新</button>
+              <button id="installPluginButton" class="button primary" type="button">安装插件压缩包</button>
+              <button id="openPluginsButton" class="button secondary" type="button">打开插件目录</button>
             </div>
           </div>
           <div id="pluginList" class="plugin-list"></div>
@@ -104,25 +123,37 @@
       <section id="tools" class="section">
         <div class="grid two">
           <article class="panel">
-            <h2 id="foldersTitle">Folders</h2>
+            <p id="foldersKicker" class="panel-kicker">Folders</p>
+            <h2 id="foldersTitle">目录</h2>
             <div class="stack">
-              <button id="toolsOpenGameButton" class="button secondary">Open Game Folder</button>
-              <button id="toolsOpenPluginsButton" class="button secondary">Open Plugins Folder</button>
-              <button id="toolsOpenConfigButton" class="button secondary">Open Config Folder</button>
+              <button id="toolsOpenGameButton" class="button secondary" type="button">打开游戏目录</button>
+              <button id="toolsOpenPluginsButton" class="button secondary" type="button">打开插件目录</button>
+              <button id="toolsOpenConfigButton" class="button secondary" type="button">打开配置目录</button>
             </div>
           </article>
           <article class="panel">
-            <h2 id="installRulesTitle">Install Rules</h2>
+            <p id="rulesKicker" class="panel-kicker">Rules</p>
+            <h2 id="installRulesTitle">安装规则</h2>
             <ul class="notes">
-              <li id="ruleCloseGame">Close the game before changing plugins.</li>
-              <li id="ruleZipSafe">Plugin zips are extracted only inside the selected game folder.</li>
-              <li id="ruleKeepConfig">Uninstall keeps BepInEx config files.</li>
-              <li id="ruleDisabled">Disabled plugins are renamed to <code>.dll.disabled</code>.</li>
+              <li id="ruleCloseGame">修改插件前请先关闭游戏。</li>
+              <li id="ruleZipSafe">插件压缩包只会解压到已选择的游戏目录内。</li>
+              <li id="ruleKeepConfig">卸载插件时会保留 BepInEx 配置文件。</li>
+              <li id="ruleDisabled">禁用插件会把 DLL 重命名为 <code>.dll.disabled</code>。</li>
             </ul>
           </article>
         </div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">SimplePlanes 2 Mod Manager</div>
+          <p id="footerDescription">轻量、安全、便捷的本地插件管理工具。</p>
+        </div>
+        <div id="footerMeta" class="footer-meta">安全 · 高效 · 便捷</div>
+      </div>
+    </footer>
   </div>
   <script>
 // {{APP_JS}}

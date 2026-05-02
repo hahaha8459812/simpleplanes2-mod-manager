@@ -2,6 +2,7 @@ using SimplePlanes2ModManager.Models;
 using System;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web.Script.Serialization;
 
@@ -139,6 +140,7 @@ namespace SimplePlanes2ModManager.Services
         {
             if (repositoryOrIndexUrl.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
+                ValidateHttpsUrl(repositoryOrIndexUrl, "index.json URL");
                 resolvedIndexUrl = repositoryOrIndexUrl;
                 return DownloadText(repositoryOrIndexUrl);
             }
@@ -169,6 +171,11 @@ namespace SimplePlanes2ModManager.Services
 
             Uri uri;
             if (!Uri.TryCreate(repositoryUrl, UriKind.Absolute, out uri))
+            {
+                return false;
+            }
+
+            if (uri.Scheme != Uri.UriSchemeHttps)
             {
                 return false;
             }
@@ -225,9 +232,28 @@ namespace SimplePlanes2ModManager.Services
 
             Uri downloadUri;
             if (!Uri.TryCreate(pluginIndex.downloadUrl, UriKind.Absolute, out downloadUri) ||
-                (downloadUri.Scheme != Uri.UriSchemeHttp && downloadUri.Scheme != Uri.UriSchemeHttps))
+                downloadUri.Scheme != Uri.UriSchemeHttps)
             {
-                throw new InvalidOperationException("index.json downloadUrl must be an http or https URL.");
+                throw new InvalidOperationException("index.json downloadUrl must be an https URL.");
+            }
+
+            if (!string.IsNullOrEmpty(pluginIndex.sha256) && !IsValidSha256(pluginIndex.sha256))
+            {
+                throw new InvalidOperationException("index.json sha256 must be a 64-character hex string.");
+            }
+        }
+
+        private static void ValidateHttpsUrl(string url, string fieldName)
+        {
+            Uri uri;
+            if (!Uri.TryCreate(url, UriKind.Absolute, out uri) || uri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new InvalidOperationException(fieldName + " must be an https URL.");
+            }
+
+            if (uri.IsLoopback)
+            {
+                throw new InvalidOperationException(fieldName + " must not point to a local address.");
             }
         }
 
@@ -257,7 +283,59 @@ namespace SimplePlanes2ModManager.Services
                 client.DownloadFile(pluginIndex.downloadUrl, packagePath);
             }
 
+            if (!string.IsNullOrEmpty(pluginIndex.sha256))
+            {
+                ValidatePackageHash(packagePath, pluginIndex.sha256);
+            }
+
             return packagePath;
+        }
+
+        private static void ValidatePackageHash(string packagePath, string expectedSha256)
+        {
+            string actualSha256 = ComputeSha256(packagePath);
+            if (!string.Equals(actualSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Downloaded plugin package sha256 does not match index.json.");
+            }
+        }
+
+        private static string ComputeSha256(string filePath)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            using (FileStream stream = File.OpenRead(filePath))
+            {
+                byte[] hashBytes = sha256.ComputeHash(stream);
+                StringBuilder builder = new StringBuilder(hashBytes.Length * 2);
+                for (int index = 0; index < hashBytes.Length; index++)
+                {
+                    builder.Append(hashBytes[index].ToString("x2"));
+                }
+
+                return builder.ToString();
+            }
+        }
+
+        private static bool IsValidSha256(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length != 64)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < value.Length; index++)
+            {
+                char character = value[index];
+                bool isHexDigit = (character >= '0' && character <= '9') ||
+                                  (character >= 'a' && character <= 'f') ||
+                                  (character >= 'A' && character <= 'F');
+                if (!isHexDigit)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private PluginInstallRecord FindRecordById(string pluginId)

@@ -1,6 +1,7 @@
 (function () {
   var state = null;
   var language = "zh-CN";
+  var busy = false;
 
   var i18n = {
     "zh-CN": {
@@ -11,6 +12,14 @@
       plugins: "\u63d2\u4ef6",
       tools: "\u5de5\u5177",
       status: "\u72b6\u6001",
+      primaryNav: "\u4e3b\u5bfc\u822a",
+      heroKicker: "\u672c\u5730\u63d2\u4ef6\u7ba1\u7406",
+      gameKicker: "\u6e38\u620f\u76ee\u5f55",
+      runtimeKicker: "\u8fd0\u884c\u73af\u5883",
+      installedKicker: "\u5df2\u5b89\u88c5",
+      libraryKicker: "\u63d2\u4ef6\u5e93",
+      foldersKicker: "\u5feb\u6377\u76ee\u5f55",
+      rulesKicker: "\u5b89\u5168\u89c4\u5219",
       loading: "\u52a0\u8f7d\u4e2d...",
       noGame: "\u672a\u9009\u62e9\u6e38\u620f\u76ee\u5f55\u3002",
       refresh: "\u5237\u65b0",
@@ -28,6 +37,7 @@
       registerSource: "\u7ed1\u5b9a\u66f4\u65b0\u6e90",
       checkUpdates: "\u68c0\u67e5\u66f4\u65b0",
       gitUrlPlaceholder: "GitHub \u4ed3\u5e93\u5730\u5740\u6216 index.json \u5730\u5740",
+      gitUrlLabel: "GitHub \u4ed3\u5e93\u6216 index.json",
       openPluginsFolder: "\u6253\u5f00\u63d2\u4ef6\u76ee\u5f55",
       folders: "\u76ee\u5f55",
       installRules: "\u5b89\u88c5\u89c4\u5219",
@@ -43,6 +53,7 @@
       incomplete: "\u4e0d\u5b8c\u6574",
       installed: "\u5df2\u5b89\u88c5",
       noPlugins: "\u6ca1\u6709\u627e\u5230\u5df2\u5b89\u88c5\u63d2\u4ef6\u3002",
+      noPluginsHint: "\u8bf7\u5148\u9009\u62e9\u6e38\u620f\u76ee\u5f55\uff0c\u7136\u540e\u5b89\u88c5\u63d2\u4ef6\u538b\u7f29\u5305\u6216\u4ece Git \u5b89\u88c5\u3002",
       enabled: "\u5df2\u542f\u7528",
       disabled: "\u5df2\u7981\u7528",
       version: "\u7248\u672c",
@@ -56,8 +67,11 @@
       noUpdateSource: "\u65e0\u66f4\u65b0\u6765\u6e90",
       uninstall: "\u5378\u8f7d",
       done: "\u5b8c\u6210\u3002",
+      working: "\u5904\u7406\u4e2d...",
       bridgeUnavailable: "\u6865\u63a5\u65b9\u6cd5\u4e0d\u53ef\u7528\uff1a",
       operationFailed: "\u64cd\u4f5c\u5931\u8d25\u3002",
+      footerDescription: "\u8f7b\u91cf\u3001\u5b89\u5168\u3001\u4fbf\u6377\u7684\u672c\u5730\u63d2\u4ef6\u7ba1\u7406\u5de5\u5177\u3002",
+      footerMeta: "\u5b89\u5168 \u00b7 \u9ad8\u6548 \u00b7 \u4fbf\u6377",
       switchLanguage: "English"
     },
     "en-US": {
@@ -68,6 +82,14 @@
       plugins: "Plugins",
       tools: "Tools",
       status: "Status",
+      primaryNav: "Primary navigation",
+      heroKicker: "Local Plugin Manager",
+      gameKicker: "Game Folder",
+      runtimeKicker: "Runtime",
+      installedKicker: "Installed",
+      libraryKicker: "Library",
+      foldersKicker: "Folders",
+      rulesKicker: "Rules",
       loading: "Loading...",
       noGame: "No game folder selected.",
       refresh: "Refresh",
@@ -85,6 +107,7 @@
       registerSource: "Bind Source",
       checkUpdates: "Check Updates",
       gitUrlPlaceholder: "GitHub repository URL or index.json URL",
+      gitUrlLabel: "GitHub repository or index.json",
       openPluginsFolder: "Open Plugins Folder",
       folders: "Folders",
       installRules: "Install Rules",
@@ -100,6 +123,7 @@
       incomplete: "Incomplete",
       installed: "Installed",
       noPlugins: "No installed plugins found.",
+      noPluginsHint: "Select a game folder first, then install a plugin zip or install from Git.",
       enabled: "Enabled",
       disabled: "Disabled",
       version: "Version",
@@ -113,8 +137,11 @@
       noUpdateSource: "No Update Source",
       uninstall: "Uninstall",
       done: "Done.",
+      working: "Working...",
       bridgeUnavailable: "Bridge method is unavailable: ",
       operationFailed: "Operation failed.",
+      footerDescription: "A lightweight, safe, and convenient local plugin manager.",
+      footerMeta: "Safe · Efficient · Convenient",
       switchLanguage: "\u4e2d\u6587"
     }
   };
@@ -125,9 +152,12 @@
   }
 
   function updateUiLanguage() {
+    document.documentElement.lang = language;
     document.title = text("appTitle");
+    setAttribute("primaryNav", "aria-label", text("primaryNav"));
     setText("brandTitle", text("brandTitle"));
     setText("brandSubtitle", text("brandSubtitle"));
+    setText("heroKicker", text("heroKicker"));
     setText("navOverview", text("overview"));
     setText("navPlugins", text("plugins"));
     setText("navTools", text("tools"));
@@ -135,29 +165,38 @@
     setText("mainTitle", text("appTitle"));
     setText("refreshButton", text("refresh"));
     setText("browseButton", text("selectGameFolder"));
+    setText("gameKicker", text("gameKicker"));
     setText("gameTitle", text("game"));
     setText("openGameButton", text("openGameFolder"));
+    setText("runtimeKicker", text("runtimeKicker"));
+    setText("installedKicker", text("installedKicker"));
     setText("installedPluginsTitle", text("installedPlugins"));
     setText("installBundledBepInExButton", text("installBundledBepInEx"));
     setText("installBepInExButton", text("installBepInExZip"));
     setText("openConfigButton", text("openConfig"));
+    setText("libraryKicker", text("libraryKicker"));
     setText("pluginsTitle", text("plugins"));
     setText("installFromGitButton", text("installFromGit"));
     setText("registerSourceButton", text("registerSource"));
     setText("checkUpdatesButton", text("checkUpdates"));
+    setText("gitInstallUrlLabel", text("gitUrlLabel"));
     setInputPlaceholder("gitInstallUrlInput", text("gitUrlPlaceholder"));
     setText("installPluginButton", text("installPluginZip"));
     setText("openPluginsButton", text("openPluginsFolder"));
+    setText("foldersKicker", text("foldersKicker"));
     setText("foldersTitle", text("folders"));
     setText("toolsOpenGameButton", text("openGameFolder"));
     setText("toolsOpenPluginsButton", text("openPluginsFolder"));
     setText("toolsOpenConfigButton", text("openConfig"));
+    setText("rulesKicker", text("rulesKicker"));
     setText("installRulesTitle", text("installRules"));
     setText("ruleCloseGame", text("ruleCloseGame"));
     setText("ruleZipSafe", text("ruleZipSafe"));
     setText("ruleKeepConfig", text("ruleKeepConfig"));
     setText("ruleDisabled", text("ruleDisabled"));
     setText("languageButton", text("switchLanguage"));
+    setText("footerDescription", text("footerDescription"));
+    setText("footerMeta", text("footerMeta"));
   }
 
   function callBridge(method, argument) {
@@ -170,6 +209,8 @@
       var raw = null;
       if (method === "GetState") {
         raw = window.external.GetState();
+      } else if (method === "GetOperationState") {
+        raw = window.external.GetOperationState();
       } else if (method === "BrowseGameDirectory") {
         raw = window.external.BrowseGameDirectory();
       } else if (method === "SetLanguage") {
@@ -225,7 +266,35 @@
   }
 
   function runAndRefresh(method, argument) {
+    if (busy) {
+      return;
+    }
+
+    setBusy(true);
     var response = callBridge(method, argument);
+    if (response && response.ok && response.data && response.data.operationRunning) {
+      pollOperationState();
+      return;
+    }
+
+    setBusy(false);
+    handleBridgeResponse(response);
+  }
+
+  function pollOperationState() {
+    window.setTimeout(function () {
+      var response = callBridge("GetOperationState");
+      if (response && response.ok && response.data && response.data.operationRunning) {
+        pollOperationState();
+        return;
+      }
+
+      setBusy(false);
+      handleBridgeResponse(response);
+    }, 500);
+  }
+
+  function handleBridgeResponse(response) {
     if (!response || response.cancelled) {
       return;
     }
@@ -241,6 +310,10 @@
       updateUiLanguage();
       renderState();
       showMessage(text("done"), false);
+      return;
+    }
+
+    if (response.data && response.data.operationRunning === false) {
       return;
     }
 
@@ -289,7 +362,7 @@
     }
 
     if (!plugins.length) {
-      container.innerHTML = '<div class="muted">' + escapeHtml(text("noPlugins")) + '</div>';
+      container.innerHTML = '<div class="empty-state"><strong>' + escapeHtml(text("noPlugins")) + '</strong><br>' + escapeHtml(text("noPluginsHint")) + '</div>';
       return;
     }
 
@@ -323,8 +396,8 @@
     return (
       '<div class="plugin-card">' +
       '<div class="plugin-title">' +
-      '<span>' + escapeHtml(plugin.name || plugin.id) + '</span>' +
-      '<span>' + updateBadge + '<span class="badge ' + statusClass + '">' + statusText + '</span></span>' +
+      '<span class="plugin-title-name">' + escapeHtml(plugin.name || plugin.id) + '</span>' +
+      '<span class="plugin-title-badges">' + updateBadge + '<span class="badge ' + statusClass + '">' + statusText + '</span></span>' +
       '</div>' +
       '<div class="plugin-meta">' +
       escapeHtml(plugin.entryFile || "--") + '<br>' +
@@ -395,6 +468,7 @@
     }
 
     box.className = isError ? "message error" : "message";
+    box.setAttribute("role", isError ? "alert" : "status");
     setElementText(box, message);
     if (!isError) {
       window.setTimeout(function () {
@@ -437,6 +511,38 @@
     var element = document.getElementById(id);
     if (element) {
       element.setAttribute("placeholder", value);
+    }
+  }
+
+  function setAttribute(id, name, value) {
+    var element = document.getElementById(id);
+    if (element) {
+      element.setAttribute(name, value);
+    }
+  }
+
+  function setBusy(isBusy) {
+    busy = !!isBusy;
+    document.body.className = busy ? "busy" : "";
+    setActionButtonsDisabled(busy);
+    if (busy) {
+      showMessage(text("working"), false);
+    }
+  }
+
+  function setActionButtonsDisabled(disabled) {
+    var buttons = document.getElementsByTagName("button");
+    for (var index = 0; index < buttons.length; index++) {
+      if ((" " + buttons[index].className + " ").indexOf(" nav-item ") >= 0) {
+        continue;
+      }
+
+      buttons[index].disabled = !!disabled;
+      if (disabled) {
+        buttons[index].className = buttons[index].className + " busy";
+      } else {
+        buttons[index].className = buttons[index].className.replace(/\s*busy/g, "");
+      }
     }
   }
 

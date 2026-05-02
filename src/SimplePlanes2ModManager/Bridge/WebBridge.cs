@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -20,6 +21,10 @@ namespace SimplePlanes2ModManager.Bridge
         private readonly PluginService _pluginService;
         private readonly RemotePluginService _remotePluginService;
         private readonly JavaScriptSerializer _serializer;
+        private readonly object _operationLock = new object();
+        private BridgeResponse _lastOperationResponse;
+        private bool _isOperationRunning;
+        private string _operationName;
 
         internal WebBridge(
             Form owner,
@@ -40,12 +45,34 @@ namespace SimplePlanes2ModManager.Bridge
 
         public string GetState()
         {
+            return ToJson(BridgeResponse.Success(GetStateData()));
+        }
+
+        public string GetOperationState()
+        {
+            lock (_operationLock)
+            {
+                if (_isOperationRunning)
+                {
+                    return ToJson(BridgeResponse.Success(new
+                    {
+                        operationRunning = true,
+                        operationName = _operationName
+                    }));
+                }
+
+                if (_lastOperationResponse != null)
+                {
+                    BridgeResponse response = _lastOperationResponse;
+                    _lastOperationResponse = null;
+                    return ToJson(response);
+                }
+            }
+
             return ToJson(BridgeResponse.Success(new
             {
-                settings = _settingsService.Load(),
-                game = _gameDirectoryService.GetGameDirectoryState(),
-                bepinex = _bepInExService.GetStatus(),
-                plugins = _pluginService.ListInstalledPlugins()
+                operationRunning = false,
+                operationName = string.Empty
             }));
         }
 
@@ -102,54 +129,34 @@ namespace SimplePlanes2ModManager.Bridge
 
         public string InstallPluginFromGit(string repositoryOrIndexUrl)
         {
-            try
+            return StartBackgroundOperation("Install plugin from Git", delegate
             {
                 _remotePluginService.InstallFromGit(repositoryOrIndexUrl);
-                return GetState();
-            }
-            catch (Exception exception)
-            {
-                return ToJson(BridgeResponse.Failure(exception.Message));
-            }
+            });
         }
 
         public string CheckPluginUpdates()
         {
-            try
+            return StartBackgroundOperation("Check plugin updates", delegate
             {
                 _remotePluginService.CheckForUpdates();
-                return GetState();
-            }
-            catch (Exception exception)
-            {
-                return ToJson(BridgeResponse.Failure(exception.Message));
-            }
+            });
         }
 
         public string RegisterPluginSource(string repositoryOrIndexUrl)
         {
-            try
+            return StartBackgroundOperation("Bind plugin update source", delegate
             {
                 _remotePluginService.RegisterInstalledPluginSource(repositoryOrIndexUrl);
-                return GetState();
-            }
-            catch (Exception exception)
-            {
-                return ToJson(BridgeResponse.Failure(exception.Message));
-            }
+            });
         }
 
         public string UpdatePlugin(string pluginId)
         {
-            try
+            return StartBackgroundOperation("Update plugin", delegate
             {
                 _remotePluginService.UpdatePlugin(pluginId);
-                return GetState();
-            }
-            catch (Exception exception)
-            {
-                return ToJson(BridgeResponse.Failure(exception.Message));
-            }
+            });
         }
 
         public string SelectAndInstallBepInExZip()
@@ -162,15 +169,10 @@ namespace SimplePlanes2ModManager.Bridge
 
         public string InstallBundledBepInEx()
         {
-            try
+            return StartBackgroundOperation("Install bundled BepInEx", delegate
             {
                 _bepInExService.InstallBundledBepInEx();
-                return GetState();
-            }
-            catch (Exception exception)
-            {
-                return ToJson(BridgeResponse.Failure(exception.Message));
-            }
+            });
         }
 
         public string EnablePlugin(string pluginId)
@@ -197,7 +199,7 @@ namespace SimplePlanes2ModManager.Bridge
                 return ToJson(BridgeResponse.Cancelled("Uninstall cancelled."));
             }
 
-            return RunPluginMutation(delegate { _pluginService.UninstallPlugin(pluginId); });
+            return StartBackgroundOperation("Uninstall plugin", delegate { _pluginService.UninstallPlugin(pluginId); });
         }
 
         public string OpenGameDirectory()
@@ -231,8 +233,8 @@ namespace SimplePlanes2ModManager.Bridge
 
                 try
                 {
-                    installAction(dialog.FileName);
-                    return GetState();
+                    string selectedZipPath = dialog.FileName;
+                    return StartBackgroundOperation(title, delegate { installAction(selectedZipPath); });
                 }
                 catch (Exception exception)
                 {
@@ -252,6 +254,64 @@ namespace SimplePlanes2ModManager.Bridge
             {
                 return ToJson(BridgeResponse.Failure(exception.Message));
             }
+        }
+
+        private object GetStateData()
+        {
+            return new
+            {
+                settings = _settingsService.Load(),
+                game = _gameDirectoryService.GetGameDirectoryState(),
+                bepinex = _bepInExService.GetStatus(),
+                plugins = _pluginService.ListInstalledPlugins()
+            };
+        }
+
+        private string StartBackgroundOperation(string operationName, Action action)
+        {
+            if (action == null)
+            {
+                return ToJson(BridgeResponse.Failure("Operation is invalid."));
+            }
+
+            lock (_operationLock)
+            {
+                if (_isOperationRunning)
+                {
+                    return ToJson(BridgeResponse.Failure("Another operation is still running."));
+                }
+
+                _isOperationRunning = true;
+                _operationName = string.IsNullOrEmpty(operationName) ? "Operation" : operationName;
+                _lastOperationResponse = null;
+            }
+
+            Task.Factory.StartNew(delegate
+            {
+                BridgeResponse response;
+                try
+                {
+                    action();
+                    response = BridgeResponse.Success(GetStateData());
+                }
+                catch (Exception exception)
+                {
+                    response = BridgeResponse.Failure(exception.Message);
+                }
+
+                lock (_operationLock)
+                {
+                    _isOperationRunning = false;
+                    _operationName = string.Empty;
+                    _lastOperationResponse = response;
+                }
+            }, TaskCreationOptions.LongRunning);
+
+            return ToJson(BridgeResponse.Success(new
+            {
+                operationRunning = true,
+                operationName = operationName
+            }));
         }
 
         private string OpenDirectory(string directoryPath)

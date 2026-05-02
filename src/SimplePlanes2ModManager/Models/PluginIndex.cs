@@ -8,6 +8,7 @@ namespace SimplePlanes2ModManager.Models
         public string description { get; set; }
         public string fileName { get; set; }
         public string downloadUrl { get; set; }
+        public string sha256 { get; set; }
         public string repository { get; set; }
         public string entryDll { get; set; }
     }
