@@ -4,6 +4,7 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -11,6 +12,8 @@ namespace SimplePlanes2ModManager
 {
     internal sealed class MainForm : Form
     {
+        private const int MinimumWindowWidth = 980;
+        private const int MinimumWindowHeight = 640;
         private readonly WebBrowser _browser;
         private readonly ManagerSettingsService _settingsService;
         private readonly GameDirectoryService _gameDirectoryService;
@@ -20,7 +23,9 @@ namespace SimplePlanes2ModManager
         public MainForm()
         {
             Text = "SimplePlanes 2 Mod Manager";
-            MinimumSize = new Size(980, 640);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            MinimumSize = ScaleSizeForDpi(MinimumWindowWidth, MinimumWindowHeight);
+            Size = ScaleSizeForDpi(1120, 720);
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(13, 24, 38);
 
@@ -44,6 +49,17 @@ namespace SimplePlanes2ModManager
 
             Controls.Add(_browser);
             Load += OnLoad;
+        }
+
+        private static Size ScaleSizeForDpi(int width, int height)
+        {
+            using (Graphics graphics = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                float scale = Math.Max(1f, graphics.DpiX / 96f);
+                return new Size(
+                    Math.Max(width, (int)Math.Round(width * scale)),
+                    Math.Max(height, (int)Math.Round(height * scale)));
+            }
         }
 
         private void OnLoad(object sender, EventArgs eventArgs)

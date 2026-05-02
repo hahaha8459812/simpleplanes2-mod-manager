@@ -10,6 +10,7 @@ using System.Windows.Forms;
 namespace SimplePlanes2ModManager.Bridge
 {
     [ComVisible(true)]
+    [ClassInterface(ClassInterfaceType.AutoDispatch)]
     public sealed class WebBridge
     {
         private readonly Form _owner;
@@ -67,6 +68,19 @@ namespace SimplePlanes2ModManager.Bridge
             try
             {
                 _gameDirectoryService.SaveGameDirectory(gameDirectory);
+                return GetState();
+            }
+            catch (Exception exception)
+            {
+                return ToJson(BridgeResponse.Failure(exception.Message));
+            }
+        }
+
+        public string SetLanguage(string language)
+        {
+            try
+            {
+                _settingsService.SaveLanguage(language);
                 return GetState();
             }
             catch (Exception exception)

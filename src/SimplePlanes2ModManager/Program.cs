@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using System;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace SimplePlanes2ModManager
@@ -9,10 +10,23 @@ namespace SimplePlanes2ModManager
         [STAThread]
         private static void Main()
         {
+            EnableDpiAwareness();
             EnableModernBrowserMode();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
+        }
+
+        private static void EnableDpiAwareness()
+        {
+            try
+            {
+                SetProcessDPIAware();
+            }
+            catch
+            {
+                // DPI awareness is best-effort for older Windows builds.
+            }
         }
 
         private static void EnableModernBrowserMode()
@@ -34,5 +48,8 @@ namespace SimplePlanes2ModManager
                 // Browser emulation is a UI compatibility hint. The manager can still run without it.
             }
         }
+
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
     }
 }

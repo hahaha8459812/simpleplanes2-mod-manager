@@ -24,7 +24,8 @@ namespace SimplePlanes2ModManager.Services
             {
                 return new ManagerSettings
                 {
-                    gameDirectory = GetDefaultGameDirectory()
+                    gameDirectory = GetDefaultGameDirectory(),
+                    language = "zh-CN"
                 };
             }
 
@@ -34,14 +35,15 @@ namespace SimplePlanes2ModManager.Services
                 ManagerSettings settings = _serializer.Deserialize<ManagerSettings>(json);
                 if (settings == null)
                 {
-                    return new ManagerSettings();
+                    return CreateDefaultSettings();
                 }
 
+                EnsureDefaults(settings);
                 return settings;
             }
             catch
             {
-                return new ManagerSettings();
+                return CreateDefaultSettings();
             }
         }
 
@@ -56,10 +58,34 @@ namespace SimplePlanes2ModManager.Services
             File.WriteAllText(_settingsPath, json);
         }
 
+        public void SaveLanguage(string language)
+        {
+            ManagerSettings settings = Load();
+            settings.language = string.Equals(language, "en-US", StringComparison.OrdinalIgnoreCase) ? "en-US" : "zh-CN";
+            Save(settings);
+        }
+
         private static string GetDefaultGameDirectory()
         {
             string defaultPath = @"E:\Game\steam\steamapps\common\SimplePlanes 2";
             return Directory.Exists(defaultPath) ? defaultPath : string.Empty;
+        }
+
+        private static ManagerSettings CreateDefaultSettings()
+        {
+            return new ManagerSettings
+            {
+                gameDirectory = GetDefaultGameDirectory(),
+                language = "zh-CN"
+            };
+        }
+
+        private static void EnsureDefaults(ManagerSettings settings)
+        {
+            if (string.IsNullOrEmpty(settings.language))
+            {
+                settings.language = "zh-CN";
+            }
         }
     }
 }
