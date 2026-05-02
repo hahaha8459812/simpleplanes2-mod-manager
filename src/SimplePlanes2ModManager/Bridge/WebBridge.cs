@@ -91,6 +91,19 @@ namespace SimplePlanes2ModManager.Bridge
             });
         }
 
+        public string InstallBundledBepInEx()
+        {
+            try
+            {
+                _bepInExService.InstallBundledBepInEx();
+                return GetState();
+            }
+            catch (Exception exception)
+            {
+                return ToJson(BridgeResponse.Failure(exception.Message));
+            }
+        }
+
         public string EnablePlugin(string pluginId)
         {
             return RunPluginMutation(delegate { _pluginService.EnablePlugin(pluginId); });

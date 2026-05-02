@@ -9,7 +9,8 @@
 - 选择并保存 `SimplePlanes 2` 游戏目录。
 - 检测游戏目录是否有效。
 - 检测 BepInEx 5 是否已安装。
-- 从本地 BepInEx zip 安装 BepInEx。
+- 安装 exe 内置的 BepInEx 5 Mono x64。
+- 从本地 BepInEx zip 安装 BepInEx，作为备用入口。
 - 扫描 `BepInEx\plugins` 下已安装插件。
 - 从本地插件 zip 安装插件。
 - 启用 / 禁用插件 DLL。
@@ -18,11 +19,17 @@
 
 ## 构建
 
-本机当前没有 .NET SDK，因此第一版使用系统自带的 .NET Framework 编译器构建，避免引入额外工具链。
+本机当前没有 .NET SDK，因此第一版使用系统自带的 .NET Framework 编译器构建，避免引入额外工具链。默认构建会下载并嵌入 `BepInEx_win_x64_5.4.23.2.zip`，最终 exe 自带 BepInEx。
 
 ```powershell
 cd E:\Code\simpleplanes2-mod-manager
 .\build.ps1 -Release
+```
+
+如果只想构建不内置 BepInEx 的调试版本：
+
+```powershell
+.\build.ps1 -Release -SkipBundledBepInEx
 ```
 
 构建产物：
@@ -59,4 +66,3 @@ artifacts\SimplePlanes2ModManager.exe
 - 卸载插件默认只删除插件目录，不删除 `BepInEx\config`。
 - 启用 / 禁用通过修改 DLL 扩展名完成，不直接删除 DLL。
 - 管理器不会执行插件包里的脚本。
-

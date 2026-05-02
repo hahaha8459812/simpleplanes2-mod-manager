@@ -212,6 +212,7 @@
     bindClick("refreshButton", refresh);
     bindClick("browseButton", function () { runAndRefresh("BrowseGameDirectory"); });
     bindClick("installPluginButton", function () { runAndRefresh("SelectAndInstallPluginZip"); });
+    bindClick("installBundledBepInExButton", function () { runAndRefresh("InstallBundledBepInEx"); });
     bindClick("installBepInExButton", function () { runAndRefresh("SelectAndInstallBepInExZip"); });
     bindClick("openGameButton", function () { runAndRefresh("OpenGameDirectory"); });
     bindClick("openPluginsButton", function () { runAndRefresh("OpenPluginsDirectory"); });

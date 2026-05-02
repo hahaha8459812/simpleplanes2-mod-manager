@@ -3,6 +3,8 @@ artifacts/
 release/
 bin/
 obj/
+.deps/
+.ci-deps/
 
 # local runtime data
 *.log

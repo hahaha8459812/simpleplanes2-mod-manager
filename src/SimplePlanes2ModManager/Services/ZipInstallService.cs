@@ -26,6 +26,26 @@ namespace SimplePlanes2ModManager.Services
             }
         }
 
+        public static void ExtractZipStreamToDirectorySafely(Stream zipStream, string targetDirectory)
+        {
+            if (zipStream == null)
+            {
+                throw new ArgumentNullException("zipStream");
+            }
+
+            if (string.IsNullOrEmpty(targetDirectory) || !Directory.Exists(targetDirectory))
+            {
+                throw new DirectoryNotFoundException("Target directory does not exist.");
+            }
+
+            string fullTargetDirectory = EnsureTrailingSeparator(Path.GetFullPath(targetDirectory));
+            using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read, false))
+            {
+                ValidateArchiveEntries(archive, fullTargetDirectory);
+                ExtractArchiveEntries(archive, fullTargetDirectory);
+            }
+        }
+
         private static void ValidateArchiveEntries(ZipArchive archive, string fullTargetDirectory)
         {
             foreach (ZipArchiveEntry entry in archive.Entries)

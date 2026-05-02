@@ -9,7 +9,8 @@ The current version is a first-stage local-management skeleton:
 - Select and persist the `SimplePlanes 2` game directory.
 - Validate the game directory.
 - Detect whether BepInEx 5 is installed.
-- Install BepInEx from a local BepInEx zip.
+- Install the BepInEx 5 Mono x64 package bundled inside the exe.
+- Install BepInEx from a local BepInEx zip as a fallback path.
 - Scan installed plugins under `BepInEx\plugins`.
 - Install plugins from local plugin zips.
 - Enable / disable plugin DLLs.
@@ -18,11 +19,17 @@ The current version is a first-stage local-management skeleton:
 
 ## Build
 
-The current machine does not have the .NET SDK installed, so the first version uses the system .NET Framework compiler to avoid an extra toolchain.
+The current machine does not have the .NET SDK installed, so the first version uses the system .NET Framework compiler to avoid an extra toolchain. The default build downloads and embeds `BepInEx_win_x64_5.4.23.2.zip`, so the final exe carries BepInEx.
 
 ```powershell
 cd E:\Code\simpleplanes2-mod-manager
 .\build.ps1 -Release
+```
+
+Debug build without bundled BepInEx:
+
+```powershell
+.\build.ps1 -Release -SkipBundledBepInEx
 ```
 
 Build output:
@@ -59,4 +66,3 @@ The frontend only displays state and calls fixed actions. All filesystem work is
 - Uninstall removes the plugin directory only; it does not delete `BepInEx\config`.
 - Enable / disable is done by renaming DLL extensions, not deleting DLLs.
 - The manager does not execute scripts from plugin packages.
-

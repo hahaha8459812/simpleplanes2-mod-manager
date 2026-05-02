@@ -1,6 +1,7 @@
 using SimplePlanes2ModManager.Models;
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace SimplePlanes2ModManager.Services
 {
@@ -41,6 +42,23 @@ namespace SimplePlanes2ModManager.Services
             _gameDirectoryService.ThrowIfGameIsRunning();
             string gameDirectory = _gameDirectoryService.GetGameDirectoryOrThrow();
             ZipInstallService.ExtractZipToDirectorySafely(zipPath, gameDirectory);
+        }
+
+        public void InstallBundledBepInEx()
+        {
+            _gameDirectoryService.ThrowIfGameIsRunning();
+            string gameDirectory = _gameDirectoryService.GetGameDirectoryOrThrow();
+
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream("SimplePlanes2ModManager.Bundled.BepInEx_win_x64.zip"))
+            {
+                if (stream == null)
+                {
+                    throw new InvalidOperationException("Bundled BepInEx package was not found in this build.");
+                }
+
+                ZipInstallService.ExtractZipStreamToDirectorySafely(stream, gameDirectory);
+            }
         }
     }
 }
